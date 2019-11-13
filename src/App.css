@@ -1,10 +1,14 @@
-.center {
+body {
   margin: 0;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  -ms-transform: translate(-50%, -50%);
-  transform: translate(-50%, -50%);
-  min-width: 650px;
-  width: 40%;
+  background: url("https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fwww.fujifilm.com%2Fproducts%2Fdigital_cameras%2Fx%2Ffujifilm_x_t1%2Fsample_images%2Fimg%2Findex%2Fff_x_t1_001.JPG&f=1&nofb=1");
+  background-size: 100%;
+}
+
+@media (max-width: 768px) {
+  body {
+    display: none;
+  }
+  html::after {
+    content: "DEVICE NOT SUPPORTED!";
+  }
 }

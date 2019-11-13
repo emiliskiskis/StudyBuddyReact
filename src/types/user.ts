@@ -5,11 +5,3 @@ export interface User {
   email?: string;
 }
 
-const a: User = {
-  username: "emilis",
-  firstName: "Onig",
-  lastName: "egwnoig",
-  email: "tgqewhnq3i"
-};
-
-a.email?.replace(/.*/, "");
