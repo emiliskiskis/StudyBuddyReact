@@ -5,6 +5,7 @@ import { Field, Form, Formik } from "formik";
 
 import React from "react";
 import { TextField } from "formik-material-ui";
+import { doLogin } from "./api/API";
 
 function LoginScreen(props: { onRegisterButtonPressed: () => void }) {
   return (
@@ -20,7 +21,13 @@ function LoginScreen(props: { onRegisterButtonPressed: () => void }) {
         <Paper style={{ padding: 16 }}>
           <Formik
             initialValues={{ username: "", password: "" }}
-            onSubmit={() => {}}
+            onSubmit={async (values, actions) => {
+              try {
+                await doLogin(values.username, values.password);
+              } catch (exception) {
+                alert(exception);
+              }
+            }}
             validationSchema={yup.object({
               username: yup.string().required("Please enter a username"),
               password: yup.string().required("Please enter a password")

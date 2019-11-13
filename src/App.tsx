@@ -4,10 +4,12 @@ import React, { useState } from "react";
 
 import LoginScreen from "./LoginScreen";
 import RegisterScreen from "./RegisterScreen";
+import UserControlScreen from "./UserControlScreen";
 
 enum PageStates {
   SignInPage,
-  RegisterPage
+  RegisterPage,
+  UserLandingPage
 }
 
 const App: React.FC = () => {
@@ -25,6 +27,7 @@ const App: React.FC = () => {
         <LoginScreen onRegisterButtonPressed={handleRegisterButtonPressed} />
       )}
       {currentComponent === PageStates.RegisterPage && <RegisterScreen />}
+      {currentComponent === PageStates.UserLandingPage && <UserControlScreen />}
     </>
   );
 };

@@ -3,7 +3,7 @@ import axios from "axios";
 import bcrypt from "bcryptjs";
 
 let token: string;
-const uri = "http://localhost:8080/api";
+const uri = "http://172.20.10.3:8080/api"; //TODO : nustatyti valid serviso adresa
 
 export async function getSalt(username: string): Promise<{ salt: string }> {
   return (await axios.get<{ salt: string }>(`${uri}/users/${username}/salt`))
@@ -33,11 +33,9 @@ export async function doLogin(
 }
 
 export async function getUser(username: string): Promise<User> {
-  return (
-    await axios.get<User>(`${uri}/users/${username}`, {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    })
-  ).data;
+  return (await axios.get<User>(`${uri}/users/${username}`, {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  })).data;
 }
