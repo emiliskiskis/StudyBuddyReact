@@ -7,14 +7,18 @@
     "@material-ui/icons": "^4.5.1",
     "@material-ui/lab": "^4.0.0-alpha.30",
     "@material-ui/styles": "^4.5.2",
+    "@types/bcryptjs": "^2.4.2",
     "@types/jest": "24.0.21",
     "@types/node": "12.12.3",
     "@types/react": "16.9.11",
     "@types/react-dom": "16.9.3",
+    "axios": "^0.19.0",
+    "bcryptjs": "^2.4.3",
     "react": "^16.11.0",
     "react-dom": "^16.11.0",
     "react-scripts": "3.2.0",
-    "typescript": "3.6.4"
+    "typescript": "^3.7.2",
+    "unstated-next": "^1.1.0"
   },
   "scripts": {
     "start": "react-scripts start",
