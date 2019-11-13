@@ -6,8 +6,11 @@ import { Field, Form, Formik } from "formik";
 import React from "react";
 import { TextField } from "formik-material-ui";
 import { doLogin } from "./api/API";
+import { useSnackbar } from "notistack";
 
 function LoginScreen(props: { onRegisterButtonPressed: () => void }) {
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+
   return (
     <Grid
       container
@@ -25,7 +28,7 @@ function LoginScreen(props: { onRegisterButtonPressed: () => void }) {
               try {
                 await doLogin(values.username, values.password);
               } catch (exception) {
-                alert(exception);
+                enqueueSnackbar(exception.message, { variant: "error" });
               }
             }}
             validationSchema={yup.object({

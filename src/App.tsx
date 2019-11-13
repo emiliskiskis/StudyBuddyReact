@@ -4,6 +4,7 @@ import React, { useState } from "react";
 
 import LoginScreen from "./LoginScreen";
 import RegisterScreen from "./RegisterScreen";
+import { SnackbarProvider } from "notistack";
 import UserControlScreen from "./UserControlScreen";
 
 enum PageStates {
@@ -22,13 +23,17 @@ const App: React.FC = () => {
   }
 
   return (
-    <>
-      {currentComponent === PageStates.SignInPage && (
-        <LoginScreen onRegisterButtonPressed={handleRegisterButtonPressed} />
-      )}
-      {currentComponent === PageStates.RegisterPage && <RegisterScreen />}
-      {currentComponent === PageStates.UserLandingPage && <UserControlScreen />}
-    </>
+    <SnackbarProvider>
+      <>
+        {currentComponent === PageStates.SignInPage && (
+          <LoginScreen onRegisterButtonPressed={handleRegisterButtonPressed} />
+        )}
+        {currentComponent === PageStates.RegisterPage && <RegisterScreen />}
+        {currentComponent === PageStates.UserLandingPage && (
+          <UserControlScreen />
+        )}
+      </>
+    </SnackbarProvider>
   );
 };
 
