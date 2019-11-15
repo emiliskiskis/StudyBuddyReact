@@ -84,7 +84,7 @@ function LoginScreen(props: {
                       onClick={props.onRegisterButtonPressed}
                       style={{ width: "100%" }}
                     >
-                      Register?
+                      Register
                     </Button>
                   </Grid>
                 </Grid>

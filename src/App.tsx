@@ -6,14 +6,16 @@ import LoginScreen from "./LoginScreen";
 import RegisterScreen from "./RegisterScreen";
 import { SnackbarProvider } from "notistack";
 import UserControlScreen from "./UserControlScreen";
+import UserList from "./UserList";
 
 enum PageStates {
   SignInPage,
   RegisterPage,
-  UserLandingPage
+  UserLandingPage,
+  UserListPage
 }
 
-const App: React.FC = () => {
+function App() {
   const [currentComponent, setCurrentComponent] = useState<PageStates>(
     PageStates.SignInPage
   );
@@ -41,9 +43,10 @@ const App: React.FC = () => {
         {currentComponent === PageStates.UserLandingPage && (
           <UserControlScreen />
         )}
+        {currentComponent === PageStates.UserListPage && <UserList />}
       </>
     </SnackbarProvider>
   );
-};
+}
 
 export default App;
