@@ -55,9 +55,11 @@ export async function doRegister(
 }
 
 export async function getUser(username: string): Promise<User> {
-  return (await axios.get<User>(`${uri}/users/${username}`, {
-    headers: {
-      Authorization: "Bearer " + token
-    }
-  })).data;
+  return (
+    await axios.get<User>(`${uri}/users/${username}`, {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    })
+  ).data;
 }
