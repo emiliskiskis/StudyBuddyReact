@@ -5,6 +5,11 @@ import { Field, Form, Formik } from "formik";
 
 import React from "react";
 import { TextField } from "formik-material-ui";
+import { doRegister } from "./api/API";
+import { useSnackbar } from "notistack";
+
+function RegisterScreen(props: { onLoginButtonPressed: () => void }) {
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
   return (
     <Grid
@@ -24,7 +29,19 @@ import { TextField } from "formik-material-ui";
               lastName: "",
               email: ""
             }}
-            onSubmit={() => {}}
+            onSubmit={async (values, actions) => {
+              try {
+                await doRegister(
+                  values.username,
+                  values.password,
+                  values.firstName,
+                  values.lastName,
+                  values.email
+                );
+              } catch (exception) {
+                enqueueSnackbar(exception.message, { variant: "error" });
+              }
+            }}
             validationSchema={yup.object({
               username: yup.string().required("Please enter a username"),
               password: yup
@@ -119,6 +136,7 @@ import { TextField } from "formik-material-ui";
                       variant="contained"
                       name="register"
                       type="submit"
+                      onClick={props.onLoginButtonPressed}
                       style={{ width: "100%" }}
                     >
                       Register

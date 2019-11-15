@@ -22,13 +22,22 @@ const App: React.FC = () => {
     setCurrentComponent(PageStates.RegisterPage);
   }
 
+  function handleLoginButtonPressed() {
+    setCurrentComponent(PageStates.UserLandingPage);
+  }
+
   return (
     <SnackbarProvider>
       <>
         {currentComponent === PageStates.SignInPage && (
-          <LoginScreen onRegisterButtonPressed={handleRegisterButtonPressed} />
+          <LoginScreen
+            onRegisterButtonPressed={handleRegisterButtonPressed}
+            onLoginButtonPressed={handleLoginButtonPressed}
+          />
         )}
-        {currentComponent === PageStates.RegisterPage && <RegisterScreen />}
+        {currentComponent === PageStates.RegisterPage && (
+          <RegisterScreen onLoginButtonPressed={handleLoginButtonPressed} />
+        )}
         {currentComponent === PageStates.UserLandingPage && (
           <UserControlScreen />
         )}

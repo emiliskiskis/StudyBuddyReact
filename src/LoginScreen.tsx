@@ -8,7 +8,10 @@ import { TextField } from "formik-material-ui";
 import { doLogin } from "./api/API";
 import { useSnackbar } from "notistack";
 
-function LoginScreen(props: { onRegisterButtonPressed: () => void }) {
+function LoginScreen(props: {
+  onRegisterButtonPressed: () => void;
+  onLoginButtonPressed: () => void;
+}) {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
   return (
@@ -68,6 +71,7 @@ function LoginScreen(props: { onRegisterButtonPressed: () => void }) {
                       variant="contained"
                       name="login"
                       type="submit"
+                      onClick={props.onLoginButtonPressed}
                       style={{ width: "100%" }}
                     >
                       login

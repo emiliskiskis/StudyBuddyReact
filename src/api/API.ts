@@ -1,9 +1,10 @@
+import bcrypt, { genSalt } from "bcryptjs";
+
 import { User } from "../types/user";
 import axios from "axios";
-import bcrypt from "bcryptjs";
 
 let token: string;
-const uri = "http://172.20.10.3:8080/api"; //TODO : nustatyti valid serviso adresa
+const uri = "http://78.56.77.83:8080/api"; //TODO : nustatyti valid serviso adresa
 
 export async function getSalt(username: string): Promise<{ salt: string }> {
   return (await axios.get<{ salt: string }>(`${uri}/users/${username}/salt`))
@@ -17,7 +18,7 @@ export async function doLogin(
   const salt = (await getSalt(username)).salt;
   const response = await axios.post<{ token: string }>(`${uri}/login`, {
     username,
-    password: bcrypt.hashSync(password, salt)
+    password: await bcrypt.hash(password, salt)
   });
   if (response.status !== 200) {
     throw response;
@@ -30,6 +31,27 @@ export async function doLogin(
     };
     return getUser(username);
   }
+}
+
+export async function doRegister(
+  username: string,
+  password: string,
+  firstName: string,
+  lastName: string,
+  email: string
+): Promise<User> {
+  const salt = await genSalt(12);
+  const response = await axios.post(`${uri}/users`, {
+    email,
+    firstName,
+    lastName,
+    password: await bcrypt.hash(password, salt),
+    salt,
+    username
+  });
+  if (response.status !== 200) {
+    throw response;
+  } else return doLogin(username, password);
 }
 
 export async function getUser(username: string): Promise<User> {
