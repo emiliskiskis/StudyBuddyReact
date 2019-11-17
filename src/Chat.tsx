@@ -9,7 +9,7 @@ function Chat(props: {}) {
 
   useEffect(() => {
     var connection = new signalr.HubConnectionBuilder()
-      .withUrl("/chat")
+      .withUrl("http://78.56.77.83:8080/chat")
       .build();
 
     connection.on(

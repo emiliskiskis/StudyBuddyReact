@@ -7,7 +7,7 @@ let token: string;
 const uri = "http://78.56.77.83:8080/api"; //TODO : nustatyti valid serviso adresa
 
 export async function getSalt(username: string): Promise<{ salt: string }> {
-  return (await axios.get<{ salt: string }>(`${uri}/users/${username}/salt`))
+  return (await axios.get<{ salt: string }>(`${uri}/auth/salt/${username}`))
     .data;
 }
 
@@ -16,7 +16,7 @@ export async function doLogin(
   password: string
 ): Promise<User> {
   const salt = (await getSalt(username)).salt;
-  const response = await axios.post<{ token: string }>(`${uri}/login`, {
+  const response = await axios.post<{ token: string }>(`${uri}/auth/login`, {
     username,
     password: await bcrypt.hash(password, salt)
   });
@@ -24,10 +24,8 @@ export async function doLogin(
     throw response;
   } else {
     token = response.data.token;
-    axios.defaults = {
-      headers: {
-        Authorization: "Bearer " + token
-      }
+    axios.defaults.headers.common = {
+      Authorization: "Bearer " + token
     };
     return getUser(username);
   }
@@ -55,11 +53,9 @@ export async function doRegister(
 }
 
 export async function getUser(username: string): Promise<User> {
-  return (
-    await axios.get<User>(`${uri}/users/${username}`, {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    })
-  ).data;
+  return (await axios.get<User>(`${uri}/users/${username}`)).data;
+}
+
+export async function getAllUsers(): Promise<User[]> {
+  return (await axios.get<User[]>(`${uri}/users`)).data;
 }

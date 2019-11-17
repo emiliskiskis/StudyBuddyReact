@@ -24,7 +24,7 @@ function App() {
     setCurrentComponent(PageStates.RegisterPage);
   }
 
-  function handleLoginButtonPressed() {
+  function handleSuccessfulLogin() {
     setCurrentComponent(PageStates.UserLandingPage);
   }
 
@@ -34,11 +34,11 @@ function App() {
         {currentComponent === PageStates.SignInPage && (
           <LoginScreen
             onRegisterButtonPressed={handleRegisterButtonPressed}
-            onLoginButtonPressed={handleLoginButtonPressed}
+            onSuccessfulLogin={handleSuccessfulLogin}
           />
         )}
         {currentComponent === PageStates.RegisterPage && (
-          <RegisterScreen onLoginButtonPressed={handleLoginButtonPressed} />
+          <RegisterScreen onLoginButtonPressed={handleSuccessfulLogin} />
         )}
         {currentComponent === PageStates.UserLandingPage && (
           <UserControlScreen />

@@ -2,15 +2,15 @@ import * as yup from "yup";
 
 import { Button, Grid, Paper } from "@material-ui/core";
 import { Field, Form, Formik } from "formik";
+import { doLogin, getAllUsers } from "./api/API";
 
 import React from "react";
 import { TextField } from "formik-material-ui";
-import { doLogin } from "./api/API";
 import { useSnackbar } from "notistack";
 
 function LoginScreen(props: {
   onRegisterButtonPressed: () => void;
-  onLoginButtonPressed: () => void;
+  onSuccessfulLogin: () => void;
 }) {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
@@ -33,6 +33,8 @@ function LoginScreen(props: {
               } catch (exception) {
                 enqueueSnackbar(exception.message, { variant: "error" });
               }
+              await getAllUsers();
+              props.onSuccessfulLogin();
             }}
             validationSchema={yup.object({
               username: yup.string().required("Please enter a username"),
@@ -40,10 +42,7 @@ function LoginScreen(props: {
             })}
           >
             {formikProps => (
-              <Form
-                onReset={formikProps.handleReset}
-                onSubmit={formikProps.handleSubmit}
-              >
+              <Form>
                 <Grid container spacing={1} justify="space-between">
                   <Grid item xs={12}>
                     <Field
@@ -69,18 +68,15 @@ function LoginScreen(props: {
                   <Grid item xs>
                     <Button
                       variant="contained"
-                      name="login"
-                      type="submit"
-                      onClick={props.onLoginButtonPressed}
+                      onClick={formikProps.submitForm}
                       style={{ width: "100%" }}
                     >
-                      login
+                      Login
                     </Button>
                   </Grid>
                   <Grid item xs>
                     <Button
                       variant="contained"
-                      name="register"
                       onClick={props.onRegisterButtonPressed}
                       style={{ width: "100%" }}
                     >
