@@ -1,5 +1,6 @@
 import bcrypt, { genSalt } from "bcryptjs";
 
+import { Message } from "../types/message";
 import { User } from "../types/user";
 import axios from "axios";
 
@@ -58,4 +59,16 @@ export async function getUser(username: string): Promise<User> {
 
 export async function getAllUsers(): Promise<User[]> {
   return (await axios.get<User[]>(`${uri}/users`)).data;
+}
+
+export async function getAllChatMessages(
+  groupName: string
+): Promise<Message[]> {
+  return (
+    await axios.get<Message[]>(`${uri}/chat/${groupName}`, {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    })
+  ).data;
 }
