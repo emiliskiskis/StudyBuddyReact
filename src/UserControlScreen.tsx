@@ -7,14 +7,16 @@ import { getUser } from "./api/API";
 
 function UserControlScreen(props: {}) {
   return (
-    <Grid container style={{ padding: 40, minHeight: "100vh" }}>
-      <Grid item xs={3}>
-        <UserList />
+    <Paper style={{ margin: 40, height: "calc(100vh - 80px)" }}>
+      <Grid container style={{ height: "100%" }}>
+        <Grid item xs={3}>
+          <UserList />
+        </Grid>
+        <Grid item xs={9}>
+          <Chat />
+        </Grid>
       </Grid>
-      <Grid item xs={9}>
-        <Chat />
-      </Grid>
-    </Grid>
+    </Paper>
   );
 }
 
