@@ -20,7 +20,7 @@ const users = [
 
 function UserList() {
   return (
-    <Paper style={{ height: "100%", position: "absolute", width: "100%" }}>
+    <Paper style={{ height: "100%", width: "100%" }}>
       <List dense>
         {users.map(user => (
           <ListItem key={user.username}>
