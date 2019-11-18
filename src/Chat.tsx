@@ -45,7 +45,7 @@ function Chat(props: { activeChat: string; user: User }) {
     getChatMessages();
 
     var connection = new signalr.HubConnectionBuilder()
-      .withUrl("http://172.24.1.245:8080/chat")
+      .withUrl("http://buddiesofstudy.tk/chat")
       .build();
 
     connection.on(
@@ -58,7 +58,7 @@ function Chat(props: { activeChat: string; user: User }) {
       ) => {
         setMessages(prevMessages =>
           prevMessages.concat({
-            user: { username, firstName: "titas", lastName: "kr" }, //paimt first and last name
+            user: { username, firstName: "titas", lastName: "kr" }, //TODO to get firstname and last name
             text: messageText,
             sentAt
           })
@@ -70,7 +70,7 @@ function Chat(props: { activeChat: string; user: User }) {
       .start()
       .then(() => {
         setConnection(connection);
-        connection.invoke("Connect", props.user.username, props.activeChat); //global user and groupName
+        connection.invoke("Connect", props.user.username, props.activeChat);
       })
       .catch(err => {
         console.log(err);
@@ -143,7 +143,7 @@ function Chat(props: { activeChat: string; user: User }) {
 
 const useStyles = makeStyles(theme => ({
   message: {
-    backgroundColor: "#D0EFFE" //theme.palete.primary.main
+    backgroundColor: "#D0EFFE"
   }
 }));
 

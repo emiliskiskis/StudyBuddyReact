@@ -7,7 +7,7 @@ import { connect } from "http2";
 import jwtDecode from "jwt-decode";
 
 let token: string;
-const uri = "http://buddiesofstudy.tk/api"; //TODO : nustatyti valid serviso adresa
+const uri = "http://buddiesofstudy.tk/api";
 
 export async function getSalt(username: string): Promise<{ salt: string }> {
   return (await axios.get<{ salt: string }>(`${uri}/auth/salt/${username}`))
