@@ -1,6 +1,7 @@
 import "./App.css";
 
 import React, { useState } from "react";
+import { UserContainer, useUser } from "./containers/UserContainer";
 
 import LoginScreen from "./LoginScreen";
 import RegisterScreen from "./RegisterScreen";
@@ -30,7 +31,7 @@ function App() {
 
   return (
     <SnackbarProvider>
-      <>
+      <UserContainer.Provider value={useUser()}>
         {currentComponent === PageStates.SignInPage && (
           <LoginScreen
             onRegisterButtonPressed={handleRegisterButtonPressed}
@@ -43,8 +44,7 @@ function App() {
         {currentComponent === PageStates.UserLandingPage && (
           <UserControlScreen />
         )}
-        {currentComponent === PageStates.UserListPage && <UserList />}
-      </>
+      </UserContainer.Provider>
     </SnackbarProvider>
   );
 }

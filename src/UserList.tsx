@@ -4,6 +4,7 @@ import ListItemText from "@material-ui/core/ListItemText";
 import { Paper } from "@material-ui/core";
 import React from "react";
 import Typography from "@material-ui/core/Typography";
+import { getAllUsers } from "./api/API";
 
 const users = [
   {
@@ -18,12 +19,16 @@ const users = [
   }
 ];
 
-function UserList() {
+function UserList(props: { onUserSelect(username) }) {
   return (
     <Paper style={{ height: "100%", width: "100%" }}>
       <List dense>
         {users.map(user => (
-          <ListItem key={user.username}>
+          <ListItem
+            key={user.username}
+            button
+            onClick={() => props.onUserSelect(user.username)}
+          >
             <ListItemText
               primary={user.username}
               secondary={user.firstName + " " + user.lastName}
