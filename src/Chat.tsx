@@ -95,11 +95,19 @@ function Chat(props: { activeChat: string; user: User }) {
                   item
                   container
                   xs={12}
-                  justify={value.user != props.user ? "flex-start" : "flex-end"}
+                  justify={
+                    value.user.username === props.user.username
+                      ? "flex-start"
+                      : "flex-end"
+                  }
                 >
                   <Grid item xs={8}>
                     <Paper
-                      className={index % 2 === 1 ? classes.message : ""}
+                      className={
+                        value.user.username != props.user.username
+                          ? classes.message
+                          : ""
+                      }
                       style={{ padding: 4 }}
                     >
                       <Typography>
