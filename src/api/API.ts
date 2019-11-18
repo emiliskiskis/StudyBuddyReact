@@ -5,7 +5,7 @@ import { User } from "../types/user";
 import axios from "axios";
 
 let token: string;
-const uri = "http://78.56.77.83:8080/api"; //TODO : nustatyti valid serviso adresa
+const uri = "http://172.24.1.245:8080/api"; //TODO : nustatyti valid serviso adresa
 
 export async function getSalt(username: string): Promise<{ salt: string }> {
   return (await axios.get<{ salt: string }>(`${uri}/auth/salt/${username}`))
@@ -25,6 +25,7 @@ export async function doLogin(
     throw response;
   } else {
     token = response.data.token;
+    setUserToken();
     axios.defaults.headers.common = {
       Authorization: "Bearer " + token
     };
@@ -64,11 +65,22 @@ export async function getAllUsers(): Promise<User[]> {
 export async function getAllChatMessages(
   groupName: string
 ): Promise<Message[]> {
-  return (
-    await axios.get<Message[]>(`${uri}/chat/${groupName}`, {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    })
-  ).data;
+  return (await axios.get<Message[]>(`${uri}/chat/${groupName}`, {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  })).data;
+}
+
+export function setUserToken() {
+  localStorage.setItem("token", token);
+}
+
+export function checkIfAuthenticated() {
+  if (localStorage.hasOwnProperty("token")) {
+    token = localStorage.getItem("token")!;
+    return true;
+  } else {
+    return false;
+  }
 }
