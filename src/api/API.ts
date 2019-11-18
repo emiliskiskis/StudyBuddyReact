@@ -65,11 +65,13 @@ export async function getAllUsers(): Promise<User[]> {
 export async function getAllChatMessages(
   groupName: string
 ): Promise<Message[]> {
-  return (await axios.get<Message[]>(`${uri}/chat/${groupName}`, {
-    headers: {
-      Authorization: "Bearer " + token
-    }
-  })).data;
+  return (
+    await axios.get<Message[]>(`${uri}/chat/${groupName}`, {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    })
+  ).data;
 }
 
 export function setUserToken() {
@@ -79,6 +81,9 @@ export function setUserToken() {
 export function checkIfAuthenticated() {
   if (localStorage.hasOwnProperty("token")) {
     token = localStorage.getItem("token")!;
+    axios.defaults.headers.common = {
+      Authorization: "Bearer " + token
+    };
     return true;
   } else {
     return false;

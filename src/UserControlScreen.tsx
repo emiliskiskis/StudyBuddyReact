@@ -18,7 +18,7 @@ function UserControlScreen(props: {}) {
   return (
     <Paper style={{ margin: 40, height: "calc(100vh - 80px)" }}>
       <Grid container style={{ height: "100%" }}>
-        <Grid item xs={3}>
+        <Grid item xs={3} style={{ maxHeight: "100%" }}>
           <UserList onUserSelect={handleUserListSelect} />
         </Grid>
         <Grid item xs={9}>
