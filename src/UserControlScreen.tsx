@@ -1,18 +1,22 @@
 import { Grid, Paper, Typography } from "@material-ui/core";
 import React, { useContext, useState } from "react";
+import { getGroupName, getUser } from "./api/API";
 
 import Chat from "./Chat";
+import { User } from "./types/user";
 import { UserContainer } from "./containers/UserContainer";
 import UserList from "./UserList";
-import { getUser } from "./api/API";
 
 function UserControlScreen(props: {}) {
-  const { user } = useContext(UserContainer);
+  const { user } = useContext<{ user: User | undefined; setUser: any }>(
+    UserContainer
+  );
   const [activeChat, setActiveChat] = useState<string>();
 
   async function handleUserListSelect(username: string) {
-    alert(username);
-    //setActiveChat(await getGroupName(user.username, username));
+    if (user != null) {
+      setActiveChat((await getGroupName(user!.username, username)).id);
+    }
   }
 
   return (
@@ -22,7 +26,11 @@ function UserControlScreen(props: {}) {
           <UserList onUserSelect={handleUserListSelect} />
         </Grid>
         <Grid item xs={9}>
-          <Chat />
+          {activeChat != null && user != null ? (
+            <Chat activeChat={activeChat!} user={user!} />
+          ) : (
+            <Paper style={{ width: "100%", height: "100%" }} />
+          )}
         </Grid>
       </Grid>
     </Paper>

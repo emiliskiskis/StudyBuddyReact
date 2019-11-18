@@ -1,32 +1,51 @@
-import * as signalr from "@aspnet/signalr";
+import * as signalr from "@microsoft/signalr";
 
-import { Grid, List, Paper, TextField, Typography } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import {
+  Grid,
+  IconButton,
+  List,
+  Paper,
+  TextField,
+  Typography
+} from "@material-ui/core";
+import React, { useCallback, useEffect, useState } from "react";
 
-import { Field } from "formik";
 import { Message } from "./types/message";
+import SendIcon from "@material-ui/icons/Send";
+import { User } from "./types/user";
+import { UserContainer } from "./containers/UserContainer";
 import { getAllChatMessages } from "./api/API";
 import { makeStyles } from "@material-ui/styles";
 
-function Chat(props: {}) {
+function Chat(props: { activeChat: string; user: User }) {
+  const [connection, setConnection] = useState<signalr.HubConnection>();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [message, setMessage] = useState<string>();
 
   const classes = useStyles();
 
-  useEffect(() => {
-    getAllChatMessages("8bcada60-5a00-437a-b42f-aa5e2e2aa24d").then(
-      messages => {
-        setMessages(
-          messages.map(value => ({
-            ...value,
-            sentAt: new Date(value.sentAt)
-          }))
-        );
+  function sendMessage() {
+    if (connection != null)
+      if (connection!.state === signalr.HubConnectionState.Connected) {
+        connection!.invoke("SendMessage", props.user.username, message);
       }
+  }
+
+  const getChatMessages = useCallback(async () => {
+    const messages = await getAllChatMessages(props.activeChat);
+    setMessages(
+      messages.map(value => ({
+        ...value,
+        sentAt: new Date(value.sentAt)
+      }))
     );
+  }, [props.activeChat]);
+
+  useEffect(() => {
+    getChatMessages();
 
     var connection = new signalr.HubConnectionBuilder()
-      .withUrl("http://78.56.77.83:8080/chat")
+      .withUrl("http://172.24.1.245:8080/chat")
       .build();
 
     connection.on(
@@ -37,11 +56,10 @@ function Chat(props: {}) {
         messageText: string,
         sentAt: Date
       ) => {
-        setMessages(
-          messages.concat({
-            user: { username, firstName: "titas", lastName: "8======D" },
+        setMessages(prevMessages =>
+          prevMessages.concat({
+            user: { username, firstName: "titas", lastName: "kr" }, //paimt first and last name
             text: messageText,
-            groupName,
             sentAt
           })
         );
@@ -50,11 +68,21 @@ function Chat(props: {}) {
 
     connection
       .start()
-      .then(() => {})
+      .then(() => {
+        setConnection(connection);
+        connection.invoke("Connect", props.user.username, props.activeChat); //global user and groupName
+      })
       .catch(err => {
-        return console.error(err.toString());
+        console.log(err);
+      })
+      .finally(() => {
+        console.log(connection);
       });
-  }, []);
+
+    return () => {
+      connection.stop();
+    };
+  }, [getChatMessages]);
 
   return (
     <Paper style={{ margin: "8px 0", height: "100%", padding: "0 16px" }}>
@@ -67,16 +95,15 @@ function Chat(props: {}) {
                   item
                   container
                   xs={12}
-                  justify={index % 2 === 0 ? "flex-start" : "flex-end"}
+                  justify={value.user != props.user ? "flex-start" : "flex-end"}
                 >
                   <Grid item xs={8}>
                     <Paper
-                      className={index % 2 == 1 ? classes.message : ""}
+                      className={index % 2 === 1 ? classes.message : ""}
                       style={{ padding: 4 }}
                     >
                       <Typography>
-                        {value.user.firstName} {value.user.lastName}:{" "}
-                        {value.text}
+                        {value.user.firstName} : {value.text}
                       </Typography>
                     </Paper>
                   </Grid>
@@ -87,10 +114,26 @@ function Chat(props: {}) {
         </Grid>
         <Grid item>
           <TextField
+            value={message}
+            onChange={event => {
+              setMessage(event.target.value);
+            }}
             variant="outlined"
             fullWidth
             placeholder="Message"
             margin="normal"
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={() => {
+                    setMessage("");
+                    sendMessage();
+                  }}
+                >
+                  <SendIcon />
+                </IconButton>
+              )
+            }}
           />
         </Grid>
       </Grid>

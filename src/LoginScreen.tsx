@@ -2,10 +2,11 @@ import * as yup from "yup";
 
 import { Button, Grid, Paper } from "@material-ui/core";
 import { Field, Form, Formik } from "formik";
+import React, { useContext } from "react";
 import { doLogin, getAllUsers } from "./api/API";
 
-import React from "react";
 import { TextField } from "formik-material-ui";
+import { UserContainer } from "./containers/UserContainer";
 import { useSnackbar } from "notistack";
 
 function LoginScreen(props: {
@@ -13,6 +14,7 @@ function LoginScreen(props: {
   onSuccessfulLogin: () => void;
 }) {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const { setUser } = useContext(UserContainer);
 
   return (
     <Grid
@@ -29,7 +31,7 @@ function LoginScreen(props: {
             initialValues={{ username: "", password: "" }}
             onSubmit={async (values, actions) => {
               try {
-                await doLogin(values.username, values.password);
+                setUser(await doLogin(values.username, values.password));
               } catch (exception) {
                 enqueueSnackbar(exception.message, { variant: "error" });
               }

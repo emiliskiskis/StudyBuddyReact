@@ -3,9 +3,11 @@ import bcrypt, { genSalt } from "bcryptjs";
 import { Message } from "../types/message";
 import { User } from "../types/user";
 import axios from "axios";
+import { connect } from "http2";
+import jwtDecode from "jwt-decode";
 
 let token: string;
-const uri = "http://172.24.1.245:8080/api"; //TODO : nustatyti valid serviso adresa
+const uri = "http://buddiesofstudy.tk/api"; //TODO : nustatyti valid serviso adresa
 
 export async function getSalt(username: string): Promise<{ salt: string }> {
   return (await axios.get<{ salt: string }>(`${uri}/auth/salt/${username}`))
@@ -65,27 +67,30 @@ export async function getAllUsers(): Promise<User[]> {
 export async function getAllChatMessages(
   groupName: string
 ): Promise<Message[]> {
-  return (
-    await axios.get<Message[]>(`${uri}/chat/${groupName}`, {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    })
-  ).data;
+  return (await axios.get<Message[]>(`${uri}/chat/${groupName}/messages`)).data;
 }
 
 export function setUserToken() {
   localStorage.setItem("token", token);
 }
 
-export function checkIfAuthenticated() {
+export async function checkIfAuthenticated(): Promise<User | undefined> {
   if (localStorage.hasOwnProperty("token")) {
     token = localStorage.getItem("token")!;
     axios.defaults.headers.common = {
       Authorization: "Bearer " + token
     };
-    return true;
+    return getUser(jwtDecode<{ nameid: string }>(token).nameid);
   } else {
-    return false;
+    return undefined;
   }
+}
+
+export async function getGroupName(username: string, connectTo: string) {
+  return (
+    await axios.post<{ id: string }>(`${uri}/chat`, {
+      username,
+      connectTo
+    })
+  ).data;
 }
