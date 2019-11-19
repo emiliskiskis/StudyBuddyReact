@@ -8,8 +8,8 @@ import { TextField } from "formik-material-ui";
 import { doRegister } from "./api/API";
 import { useSnackbar } from "notistack";
 
-function RegisterScreen(props: { onLoginButtonPressed: () => void }) {
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+function RegisterScreen(props: { onSuccessfulRegister: () => void }) {
+  const { enqueueSnackbar } = useSnackbar();
 
   return (
     <Grid
@@ -38,9 +38,11 @@ function RegisterScreen(props: { onLoginButtonPressed: () => void }) {
                   values.lastName,
                   values.email
                 );
+                props.onSuccessfulRegister();
               } catch (exception) {
                 enqueueSnackbar(exception.message, { variant: "error" });
               }
+              actions.setSubmitting(false);
             }}
             validationSchema={yup.object({
               username: yup.string().required("Please enter a username"),
@@ -63,11 +65,8 @@ function RegisterScreen(props: { onLoginButtonPressed: () => void }) {
                 .email("Please enter a valid E-mail")
             })}
           >
-            {formikProps => (
-              <Form
-                onReset={formikProps.handleReset}
-                onSubmit={formikProps.handleSubmit}
-              >
+            {({ isSubmitting, submitForm }) => (
+              <Form>
                 <Grid container spacing={3} justify="space-between">
                   <Grid item xs={12}>
                     <Field
@@ -133,10 +132,14 @@ function RegisterScreen(props: { onLoginButtonPressed: () => void }) {
                   </Grid>
                   <Grid item xs>
                     <Button
+                      disabled={isSubmitting}
                       variant="contained"
                       name="register"
                       type="submit"
-                      onClick={props.onLoginButtonPressed}
+                      onClick={event => {
+                        event.preventDefault();
+                        submitForm();
+                      }}
                       style={{ width: "100%" }}
                     >
                       Register

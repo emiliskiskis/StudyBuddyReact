@@ -1,17 +1,17 @@
-import bcrypt, { genSalt } from "bcryptjs";
+import bcrypt, { genSalt, hash } from "bcryptjs";
 
+import { Chat } from "../types/chat";
 import { Message } from "../types/message";
 import { User } from "../types/user";
 import axios from "axios";
-import { connect } from "http2";
 import jwtDecode from "jwt-decode";
 
-let token: string;
-const uri = "http://buddiesofstudy.tk/api";
+const client = axios.create({
+  baseURL: "http://buddiesofstudy.tk/api/"
+});
 
 export async function getSalt(username: string): Promise<{ salt: string }> {
-  return (await axios.get<{ salt: string }>(`${uri}/auth/salt/${username}`))
-    .data;
+  return (await client.get<{ salt: string }>(`auth/salt/${username}`)).data;
 }
 
 export async function doLogin(
@@ -19,16 +19,16 @@ export async function doLogin(
   password: string
 ): Promise<User> {
   const salt = (await getSalt(username)).salt;
-  const response = await axios.post<{ token: string }>(`${uri}/auth/login`, {
+  const response = await client.post<{ token: string }>("auth/login", {
     username,
     password: await bcrypt.hash(password, salt)
   });
   if (response.status !== 200) {
     throw response;
   } else {
-    token = response.data.token;
-    setUserToken();
-    axios.defaults.headers.common = {
+    const token = response.data.token;
+    setUserToken(token);
+    client.defaults.headers.common = {
       Authorization: "Bearer " + token
     };
     return getUser(username);
@@ -43,41 +43,44 @@ export async function doRegister(
   email: string
 ): Promise<User> {
   const salt = await genSalt(12);
-  const response = await axios.post(`${uri}/users`, {
+  const response = await client.post("users", {
     email,
     firstName,
     lastName,
-    password: await bcrypt.hash(password, salt),
+    password: await hash(password, salt),
     salt,
     username
   });
   if (response.status !== 200) {
     throw response;
-  } else return doLogin(username, password);
+  }
+  return response.data;
 }
 
 export async function getUser(username: string): Promise<User> {
-  return (await axios.get<User>(`${uri}/users/${username}`)).data;
+  return (await client.get<User>(`users/${username}`)).data;
 }
 
 export async function getAllUsers(): Promise<User[]> {
-  return (await axios.get<User[]>(`${uri}/users`)).data;
+  return (await client.get<User[]>("users")).data;
 }
 
-export async function getAllChatMessages(
-  groupName: string
-): Promise<Message[]> {
-  return (await axios.get<Message[]>(`${uri}/chat/${groupName}/messages`)).data;
+export async function getAllUserChats(username: string): Promise<Chat[]> {
+  return (await client.get<Chat[]>(`chat/${username}`)).data;
 }
 
-export function setUserToken() {
+export async function getChatMessages(groupName: string): Promise<Message[]> {
+  return (await client.get<Message[]>(`chat/${groupName}/messages`)).data;
+}
+
+export function setUserToken(token) {
   localStorage.setItem("token", token);
 }
 
 export async function checkIfAuthenticated(): Promise<User | undefined> {
   if (localStorage.hasOwnProperty("token")) {
-    token = localStorage.getItem("token")!;
-    axios.defaults.headers.common = {
+    const token = localStorage.getItem("token")!;
+    client.defaults.headers.common = {
       Authorization: "Bearer " + token
     };
     return getUser(jwtDecode<{ nameid: string }>(token).nameid);
@@ -86,9 +89,12 @@ export async function checkIfAuthenticated(): Promise<User | undefined> {
   }
 }
 
-export async function getGroupName(username: string, connectTo: string) {
+export async function getGroupName(
+  username: string,
+  connectTo: string
+): Promise<Chat> {
   return (
-    await axios.post<{ id: string }>(`${uri}/chat`, {
+    await client.post<Chat>(`chat`, {
       username,
       connectTo
     })

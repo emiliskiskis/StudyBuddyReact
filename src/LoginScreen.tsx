@@ -13,7 +13,7 @@ function LoginScreen(props: {
   onRegisterButtonPressed: () => void;
   onSuccessfulLogin: () => void;
 }) {
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
   const { setUser } = useContext(UserContainer);
 
   return (
@@ -32,11 +32,12 @@ function LoginScreen(props: {
             onSubmit={async (values, actions) => {
               try {
                 setUser(await doLogin(values.username, values.password));
+                await getAllUsers();
+                props.onSuccessfulLogin();
               } catch (exception) {
                 enqueueSnackbar(exception.message, { variant: "error" });
               }
-              await getAllUsers();
-              props.onSuccessfulLogin();
+              actions.setSubmitting(false);
             }}
             validationSchema={yup.object({
               username: yup.string().required("Please enter a username"),

@@ -7,14 +7,13 @@ import LoginScreen from "./LoginScreen";
 import RegisterScreen from "./RegisterScreen";
 import { SnackbarProvider } from "notistack";
 import UserControlScreen from "./UserControlScreen";
-import UserList from "./UserList";
 import { checkIfAuthenticated } from "./api/API";
 
-enum PageStates {
-  SignInPage,
-  RegisterPage,
-  UserLandingPage,
-  UserListPage
+enum View {
+  Login,
+  Register,
+  UserLanding,
+  UserList
 }
 
 function App() {
@@ -28,41 +27,58 @@ function App() {
 }
 
 function Main() {
-  const [currentComponent, setCurrentComponent] = useState<PageStates>(
-    PageStates.SignInPage
-  );
-  const { setUser } = useContext(UserContainer);
+  const [currentComponent, setCurrentComponent] = useState<View>(View.Login);
+  const [pendingToken, setPendingToken] = useState<boolean>(true);
 
-  function handleRegisterButtonPressed() {
-    setCurrentComponent(PageStates.RegisterPage);
-  }
+  const { user, setUser } = useContext(UserContainer);
 
   function handleSuccessfulLogin() {
-    setCurrentComponent(PageStates.UserLandingPage);
+    setCurrentComponent(View.UserLanding);
+  }
+
+  function handleRegisterButtonPressed() {
+    setCurrentComponent(View.Register);
+  }
+
+  function handleSuccessfulRegister() {
+    setCurrentComponent(View.Login);
   }
 
   useEffect(() => {
     checkIfAuthenticated().then(user => {
+      setPendingToken(false);
       setUser(user);
       if (user != null) {
-        setCurrentComponent(PageStates.UserLandingPage);
-        console.log(user);
+        setCurrentComponent(View.UserLanding);
       }
     });
-  }, []);
+  }, [setPendingToken, setUser]);
+
+  useEffect(() => {
+    if (!pendingToken && user == null) {
+      setCurrentComponent(View.Login);
+    }
+  }, [pendingToken, user]);
 
   return (
     <>
-      {currentComponent === PageStates.UserLandingPage && <UserControlScreen />}
-      }
-      {currentComponent === PageStates.SignInPage && (
-        <LoginScreen
-          onRegisterButtonPressed={handleRegisterButtonPressed}
-          onSuccessfulLogin={handleSuccessfulLogin}
-        />
-      )}
-      {currentComponent === PageStates.RegisterPage && (
-        <RegisterScreen onLoginButtonPressed={handleSuccessfulLogin} />
+      {!pendingToken && (
+        <>
+          {currentComponent === View.Login && (
+            <LoginScreen
+              onRegisterButtonPressed={handleRegisterButtonPressed}
+              onSuccessfulLogin={handleSuccessfulLogin}
+            />
+          )}
+          {currentComponent === View.Register && (
+            <RegisterScreen onSuccessfulRegister={handleSuccessfulRegister} />
+          )}
+          {user != null && (
+            <>
+              {currentComponent === View.UserLanding && <UserControlScreen />}
+            </>
+          )}
+        </>
       )}
     </>
   );
