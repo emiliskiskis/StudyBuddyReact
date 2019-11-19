@@ -30,7 +30,7 @@ function ChatScreen(props: {
 
   const { activeChat, messages, user, onMessageSend } = props;
 
-  const messageListRef = useRef<HTMLDivElement>(null);
+  const messageListRef = useRef<HTMLUListElement>(null);
 
   async function sendMessage() {
     if (message != null && message.trim() !== "") {
@@ -51,14 +51,11 @@ function ChatScreen(props: {
     <Paper style={{ margin: "8px 0", height: "100%", padding: "0 16px" }}>
       <Grid container direction="column" spacing={2} style={{ height: "100%" }}>
         <Grid item xs style={{ maxHeight: "calc(100% - 73px)" }}>
-          <List style={{ padding: 16, height: "100%" }}>
-            <Grid
-              ref={messageListRef}
-              container
-              direction="column"
-              spacing={2}
-              style={{ overflowY: "auto", height: "100%" }}
-            >
+          <List
+            ref={messageListRef}
+            style={{ padding: 8, overflowY: "auto", height: "100%" }}
+          >
+            <Grid container direction="column" spacing={2}>
               {messages.map((value, index) => (
                 <Grid
                   key={index}
