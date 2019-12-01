@@ -8,7 +8,13 @@ import {
   Typography
 } from "@material-ui/core";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import { getAllUserChats, getChatMessages, getGroupName } from "./api/API";
 
 import AddIcon from "@material-ui/icons/Add";
@@ -19,6 +25,12 @@ import LogoutIcon from "@material-ui/icons/ExitToApp";
 import { Message } from "./types/message";
 import { User } from "./types/user";
 import { UserContainer } from "./containers/UserContainer";
+import UserList from "./UserList";
+
+enum ListView {
+  Chat,
+  User
+}
 
 function UserControlScreen() {
   const { user, setUser } = useContext<{
@@ -32,8 +44,15 @@ function UserControlScreen() {
   const [activeChat, setActiveChat] = useState<string>();
   const [chats, setChats] = useState<Chat[]>([]);
   const [connection, setConnection] = useState<HubConnection>();
-  const [loadingChats, setLoadingChats] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [messages, setMessages] = useState<{ [chatId: string]: Message[] }>({});
+  const [renderedList, setRenderedList] = useState<ListView>(ListView.Chat);
+
+  const messagesRef = useRef(messages);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   async function createNewChat(connectTo: string) {
     const newChat = await getGroupName(user.username, connectTo);
@@ -45,14 +64,64 @@ function UserControlScreen() {
   const receiveNewChat = useCallback(
     async (username: string) => {
       console.log("invoked");
-      setLoadingChats(true);
+      setLoading(true);
       const newChat = await getGroupName(user.username, username);
       setChats(prevChats => prevChats.concat(newChat));
-      setLoadingChats(false);
+      setLoading(false);
       return newChat;
     },
     [user.username]
   );
+
+  function addMessage(
+    chatId: string,
+    username: string,
+    sentUser: User | undefined,
+    text: string,
+    sentAt: string,
+    pending = false
+  ) {
+    const message = {
+      user: {
+        username: username,
+        firstName: sentUser != null ? sentUser.firstName : "",
+        lastName: sentUser != null ? sentUser.lastName : ""
+      },
+      text,
+      sentAt: new Date(sentAt),
+      pending
+    };
+    setMessages(prevMessages => ({
+      ...prevMessages,
+      [chatId]:
+        prevMessages[chatId] != null
+          ? prevMessages[chatId].concat(message)
+          : [message]
+    }));
+  }
+
+  const getActiveChatMessages = useCallback(async (chatId: string) => {
+    if (chatId != null) {
+      const messages = await getChatMessages(chatId);
+      setMessages(prevMessages => ({
+        ...prevMessages,
+        [chatId]: messages.map(value => ({
+          ...value,
+          sentAt: new Date(value.sentAt)
+        }))
+      }));
+    }
+  }, []);
+
+  async function handleChatSelect(id: string) {
+    setActiveChat(undefined);
+    if (messages[id] == null) {
+      setLoading(true);
+      await getActiveChatMessages(id);
+      setLoading(false);
+    }
+    setActiveChat(id);
+  }
 
   const handleReceiveMessage = useCallback(
     async (
@@ -61,6 +130,7 @@ function UserControlScreen() {
       messageText: string,
       sentAt: string
     ) => {
+      const messages = messagesRef.current;
       const chat = chats.find(chat => chat.id === chatId);
       if (chat != null) {
         const sentUser = chat.users.find(user => user.username === username);
@@ -71,8 +141,26 @@ function UserControlScreen() {
         addMessage(chatId, username, sentUser, messageText, sentAt);
       }
     },
-    [receiveNewChat, chats]
+    [chats, messagesRef, receiveNewChat, user.username]
   );
+
+  async function handleUserSelect(username: string) {
+    setLoading(true);
+    const chat = chats.find(
+      chat => chat.users.find(user => user.username === username) != null
+  );
+    if (chat != null) {
+      if (messages[chat.id] == null) {
+        await getActiveChatMessages(chat.id);
+      }
+      setActiveChat(chat.id);
+    } else {
+      const newChat = await createNewChat(username);
+      setActiveChat(newChat.id);
+    }
+    setRenderedList(ListView.Chat);
+    setLoading(false);
+  }
 
   useEffect(() => {
     const connection = new HubConnectionBuilder()
@@ -98,10 +186,10 @@ function UserControlScreen() {
   }, [receiveNewChat, handleReceiveMessage, user.username]);
 
   useEffect(() => {
-    setLoadingChats(true);
+    setLoading(true);
     getAllUserChats(user.username).then(chats => {
       setChats(chats);
-      setLoadingChats(false);
+      setLoading(false);
     });
   }, [user.username]);
 
@@ -160,17 +248,18 @@ function UserControlScreen() {
             <Grid container direction="column" style={{ height: "100%" }}>
               <Grid item>
                 <Typography variant="h5" style={{ padding: "8px 16px" }}>
-                  Chats
+                  {renderedList === ListView.Chat ? "Chats" : "Users"}
                 </Typography>
               </Grid>
-              <Grid item>
-                <Divider />
-              </Grid>
+              <Grid item>{loading ? <LinearProgress /> : <Divider />}</Grid>
               <Grid item xs>
+                {renderedList === ListView.Chat && (
                 <ChatList
+                    activeChat={activeChat}
                   chats={chats}
                   lastMessages={Object.assign(
                     {},
+                      ...chats.map(chat => ({ [chat.id]: chat.lastMessage })),
                     ...Object.keys(messages).map(key => ({
                       [key]: messages[key][messages[key].length - 1]
                     }))
@@ -178,10 +267,10 @@ function UserControlScreen() {
                   user={user}
                   onChatSelect={handleChatSelect}
                 />
-              </Grid>
-              {loadingChats && (
-                <Grid item>
-                  <LinearProgress />
+                )}
+                {renderedList === ListView.User && (
+                  <UserList onUserSelect={handleUserSelect} />
+                )}
                 </Grid>
               )}
               <Grid item>
@@ -191,9 +280,16 @@ function UserControlScreen() {
                 <Paper style={{ padding: "4px 8px" }}>
                   <Grid container>
                     <Grid item>
-                      <IconButton style={{ padding: 8 }}>
-                        <AddIcon />
-                      </IconButton>
+                      <AddUserButton
+                        currentList={renderedList}
+                        onClick={() => {
+                          setRenderedList(prevRenderedList =>
+                            prevRenderedList === ListView.Chat
+                              ? ListView.User
+                              : ListView.Chat
+                          );
+                        }}
+                      />
                     </Grid>
                     <Grid item xs />
                     <Grid item>
@@ -229,6 +325,25 @@ function UserControlScreen() {
         </Grid>
       </Grid>
     </Paper>
+  );
+}
+
+function AddUserButton(props: { currentList: ListView; onClick: () => any }) {
+  const { currentList, onClick } = props;
+
+  return (
+    <Tooltip title="Add user">
+      <IconButton
+        onClick={onClick}
+        style={{
+          padding: 8,
+          transform: currentList === ListView.User ? "rotate(45deg)" : "",
+          transition: "transform 300ms ease"
+        }}
+      >
+        <AddIcon />
+      </IconButton>
+    </Tooltip>
   );
 }
 

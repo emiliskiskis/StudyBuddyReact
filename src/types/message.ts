@@ -5,4 +5,5 @@ export interface Message {
   sentAt: Date;
   text: string;
   groupName?: string;
+  pending?: boolean;
 }

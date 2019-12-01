@@ -1,4 +1,5 @@
 import {
+  Avatar,
   Grid,
   IconButton,
   List,
@@ -26,7 +27,6 @@ function ChatScreen(props: {
   const classes = useStyles();
 
   const [message, setMessage] = useState<string>();
-  const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
 
   const { activeChat, messages, user, onMessageSend } = props;
 
@@ -56,47 +56,57 @@ function ChatScreen(props: {
             style={{ padding: 8, overflowY: "auto", height: "100%" }}
           >
             <Grid container direction="column" spacing={2}>
-              {messages.map((value, index) => (
+              {messages.length === 0 && (
+                <Typography align="center" color="textSecondary">
+                  No messages yet.
+                </Typography>
+              )}
+              {messages.map((message, index) => (
                 <Grid
                   key={index}
                   container
                   item
                   justify={
-                    value.user.username !== props.user.username
+                    message.user.username !== props.user.username
                       ? "flex-start"
                       : "flex-end"
                   }
                 >
-                  <Grid item xs={8}>
-                    <Paper
-                      className={
-                        value.user.username !== props.user.username
-                          ? classes.message
-                          : ""
-                      }
-                      style={{ padding: 4 }}
-                    >
-                      <Typography>
-                        {value.user.firstName} : {value.text}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
-              ))}
-              {pendingMessages.map((message, index) => (
-                <Grid
-                  key={messages.length + index}
-                  item
-                  container
-                  xs={12}
-                  justify="flex-end"
-                >
-                  <Grid item xs={8}>
-                    <Paper style={{ padding: 4 }}>
-                      <Typography color="textSecondary">
-                        {message.user.firstName}: {message.text}
-                      </Typography>
-                    </Paper>
+                  <Grid
+                    alignItems="center"
+                    container
+                    direction={
+                      message.user.username !== props.user.username
+                        ? "row"
+                        : "row-reverse"
+                    }
+                    item
+                    spacing={1}
+                  >
+                    <Grid item>
+                      <Avatar>
+                        {message.user.firstName.substring(0, 1) +
+                          message.user.lastName.substring(0, 1)}
+                      </Avatar>
+                    </Grid>
+                    <Grid item>
+                      <Paper
+                        className={
+                          message.user.username !== props.user.username
+                            ? classes.message
+                            : ""
+                        }
+                        style={{ padding: "4px 8px" }}
+                      >
+                        <Typography
+                          color={
+                            !message.pending ? "textPrimary" : "textSecondary"
+                          }
+                        >
+                          {message.text}
+                        </Typography>
+                      </Paper>
+                    </Grid>
                   </Grid>
                 </Grid>
               ))}

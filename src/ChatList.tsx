@@ -5,14 +5,25 @@ import ListItemText from "@material-ui/core/ListItemText";
 import { Message } from "./types/message";
 import React from "react";
 import { User } from "./types/user";
+import { fade } from "@material-ui/core/styles";
+import { makeStyles } from "@material-ui/core";
 
-function UserList(props: {
+const useStyles = makeStyles(theme => ({
+  active: {
+    backgroundColor: fade(theme.palette.primary.light, 0.15)
+  }
+}));
+
+function ChatList(props: {
+  activeChat: string | undefined;
   chats: Chat[];
-  lastMessages: { [chatId: string]: Message };
+  lastMessages: { [chatId: string]: Message | undefined };
   user: User;
   onChatSelect: (username: string) => any;
 }) {
-  const { chats, lastMessages, onChatSelect } = props;
+  const classes = useStyles();
+
+  const { activeChat, chats, lastMessages, onChatSelect } = props;
 
   function getChatName(chat: Chat): string {
     if (chat.name != null) return chat.name;
@@ -31,7 +42,7 @@ function UserList(props: {
   function formatLastMessage(chatId: string): string {
     if (lastMessages[chatId] == null) return "";
 
-    const { user, text } = lastMessages[chatId];
+    const { user, text } = lastMessages[chatId]!;
     const { username, firstName, lastName } = user;
 
     return `${
@@ -41,11 +52,13 @@ function UserList(props: {
 
   return (
     <List dense disablePadding style={{ overflowY: "auto", height: "100%" }}>
-      {chats.map(chat => (
+      {chats.map((chat, index) => (
         <ListItem
-          key={chat.users[0].username}
+          className={chat.id === activeChat ? classes.active : ""}
+          key={index}
           button
           onClick={() => onChatSelect(chat.id)}
+          divider
         >
           <ListItemText
             primary={getChatName(chat)}
@@ -57,4 +70,4 @@ function UserList(props: {
   );
 }
 
-export default UserList;
+export default ChatList;
