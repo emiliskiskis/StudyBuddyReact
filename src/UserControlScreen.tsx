@@ -25,7 +25,9 @@ import LogoutIcon from "@material-ui/icons/ExitToApp";
 import { Message } from "./types/message";
 import { User } from "./types/user";
 import { UserContainer } from "./containers/UserContainer";
+import UserIcon from "@material-ui/icons/AccountCircle";
 import UserList from "./UserList";
+import uuidv4 from "uuid/v4";
 
 enum ListView {
   Chat,
@@ -59,6 +61,11 @@ function UserControlScreen() {
 
     connection!.invoke("ConnectOther", connectTo, newChat.id);
     setChats(prevChats => prevChats.concat(newChat));
+    setMessages(prevMessages => ({
+      ...prevMessages,
+      [newChat.id]: []
+    }));
+    return newChat;
   }
 
   const receiveNewChat = useCallback(
@@ -77,11 +84,13 @@ function UserControlScreen() {
     chatId: string,
     username: string,
     sentUser: User | undefined,
+    messageId: string,
     text: string,
     sentAt: string,
     pending = false
   ) {
     const message = {
+      id: messageId,
       user: {
         username: username,
         firstName: sentUser != null ? sentUser.firstName : "",
@@ -123,22 +132,64 @@ function UserControlScreen() {
     setActiveChat(id);
   }
 
+  function handleMessageSend(
+    username: string,
+    chatId: string,
+    messageText: string
+  ) {
+    const messageId = uuidv4();
+    const messageSendPromise = connection!.invoke(
+      "SendMessage",
+      username,
+      chatId,
+      messageId,
+      messageText
+    );
+    addMessage(
+      chatId,
+      username,
+      user,
+      messageId,
+      messageText,
+      new Date().toISOString(),
+      true
+    );
+    return messageSendPromise;
+  }
+
   const handleReceiveMessage = useCallback(
     async (
       username: string,
       chatId: string,
+      messageId: string,
       messageText: string,
       sentAt: string
     ) => {
       const messages = messagesRef.current;
       const chat = chats.find(chat => chat.id === chatId);
       if (chat != null) {
+        if (username === user.username) {
+          const sentMessageIndex = messages[chatId].findIndex(
+            message => message.pending && message.id === messageId
+          );
+          if (messages[chatId][sentMessageIndex] != null) {
+            setMessages(prevMessages => ({
+              ...prevMessages,
+              [chatId]: [
+                ...prevMessages[chatId].slice(0, sentMessageIndex),
+                { ...prevMessages[chatId][sentMessageIndex], pending: false },
+                ...prevMessages[chatId].slice(sentMessageIndex + 1)
+              ]
+            }));
+            return;
+          }
+        }
         const sentUser = chat.users.find(user => user.username === username);
-        addMessage(chatId, username, sentUser, messageText, sentAt);
+        addMessage(chatId, username, sentUser, messageId, messageText, sentAt);
       } else {
         const newChat = await receiveNewChat(username);
         const sentUser = newChat.users.find(user => user.username === username);
-        addMessage(chatId, username, sentUser, messageText, sentAt);
+        addMessage(chatId, username, sentUser, messageId, messageText, sentAt);
       }
     },
     [chats, messagesRef, receiveNewChat, user.username]
@@ -148,7 +199,7 @@ function UserControlScreen() {
     setLoading(true);
     const chat = chats.find(
       chat => chat.users.find(user => user.username === username) != null
-  );
+    );
     if (chat != null) {
       if (messages[chat.id] == null) {
         await getActiveChatMessages(chat.id);
@@ -193,53 +244,6 @@ function UserControlScreen() {
     });
   }, [user.username]);
 
-  function addMessage(
-    chatId: string,
-    username: string,
-    sentUser: User | undefined,
-    text: string,
-    sentAt: string
-  ) {
-    setMessages(prevMessages => ({
-      ...prevMessages,
-      [chatId]: prevMessages[chatId].concat({
-        user: {
-          username: username,
-          firstName: sentUser != null ? sentUser.firstName : "",
-          lastName: sentUser != null ? sentUser.lastName : ""
-        },
-        text,
-        sentAt: new Date(sentAt)
-      })
-    }));
-  }
-
-  const getActiveChatMessages = useCallback(async (chatId: string) => {
-    if (chatId != null) {
-      const messages = await getChatMessages(chatId);
-      setMessages(prevMessages => ({
-        ...prevMessages,
-        [chatId]: messages.map(value => ({
-          ...value,
-          sentAt: new Date(value.sentAt)
-        }))
-      }));
-    }
-  }, []);
-
-  async function handleChatSelect(id: string) {
-    if (messages[id] == null) await getActiveChatMessages(id);
-    setActiveChat(id);
-  }
-
-  function handleMessageSend(
-    username: string,
-    chatId: string,
-    messageText: string
-  ) {
-    return connection!.invoke("SendMessage", username, chatId, messageText);
-  }
-
   return (
     <Paper style={{ margin: 40, height: "calc(100vh - 80px)" }}>
       <Grid container style={{ height: "100%" }}>
@@ -254,25 +258,24 @@ function UserControlScreen() {
               <Grid item>{loading ? <LinearProgress /> : <Divider />}</Grid>
               <Grid item xs>
                 {renderedList === ListView.Chat && (
-                <ChatList
+                  <ChatList
                     activeChat={activeChat}
-                  chats={chats}
-                  lastMessages={Object.assign(
-                    {},
+                    chats={chats}
+                    lastMessages={Object.assign(
+                      {},
                       ...chats.map(chat => ({ [chat.id]: chat.lastMessage })),
-                    ...Object.keys(messages).map(key => ({
-                      [key]: messages[key][messages[key].length - 1]
-                    }))
-                  )}
-                  user={user}
-                  onChatSelect={handleChatSelect}
-                />
+                      ...Object.keys(messages).map(key => ({
+                        [key]: messages[key][messages[key].length - 1]
+                      }))
+                    )}
+                    user={user}
+                    onChatSelect={handleChatSelect}
+                  />
                 )}
                 {renderedList === ListView.User && (
                   <UserList onUserSelect={handleUserSelect} />
                 )}
-                </Grid>
-              )}
+              </Grid>
               <Grid item>
                 <Divider />
               </Grid>
@@ -292,6 +295,13 @@ function UserControlScreen() {
                       />
                     </Grid>
                     <Grid item xs />
+                    <Grid item>
+                      <Tooltip
+                        title={`Logged in as ${user.firstName} ${user.lastName} (${user.username})`}
+                      >
+                        <UserIcon style={{ padding: 8 }} color="action" />
+                      </Tooltip>
+                    </Grid>
                     <Grid item>
                       <Tooltip title="Log out">
                         <IconButton
