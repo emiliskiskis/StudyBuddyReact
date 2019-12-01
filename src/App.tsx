@@ -1,5 +1,6 @@
 import "./App.css";
 
+import { MuiThemeProvider, createMuiTheme } from "@material-ui/core";
 import React, { useContext, useEffect, useState } from "react";
 import { UserContainer, useUser } from "./containers/UserContainer";
 
@@ -7,7 +8,7 @@ import LoginScreen from "./LoginScreen";
 import RegisterScreen from "./RegisterScreen";
 import { SnackbarProvider } from "notistack";
 import UserControlScreen from "./UserControlScreen";
-import { checkIfAuthenticated } from "./api/API";
+import { authenticateLocally } from "./api/API";
 
 enum View {
   Login,
@@ -16,13 +17,26 @@ enum View {
   UserList
 }
 
+const theme = createMuiTheme({
+  overrides: {
+    MuiTooltip: {
+      tooltip: {
+        borderRadius: 4,
+        fontSize: "0.85em"
+      }
+    }
+  }
+});
+
 function App() {
   return (
-    <SnackbarProvider>
-      <UserContainer.Provider value={useUser()}>
-        <Main />
-      </UserContainer.Provider>
-    </SnackbarProvider>
+    <MuiThemeProvider theme={theme}>
+      <SnackbarProvider>
+        <UserContainer.Provider value={useUser()}>
+          <Main />
+        </UserContainer.Provider>
+      </SnackbarProvider>
+    </MuiThemeProvider>
   );
 }
 
@@ -45,13 +59,16 @@ function Main() {
   }
 
   useEffect(() => {
-    checkIfAuthenticated().then(user => {
-      setPendingToken(false);
-      setUser(user);
-      if (user != null) {
-        setCurrentComponent(View.UserLanding);
-      }
-    });
+    authenticateLocally()
+      .then(user => {
+        setUser(user);
+        if (user != null) {
+          setCurrentComponent(View.UserLanding);
+        }
+      })
+      .finally(() => {
+        setPendingToken(false);
+      });
   }, [setPendingToken, setUser]);
 
   useEffect(() => {

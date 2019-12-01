@@ -3,18 +3,3 @@ body {
   background: url("background.jpg");
   background-size: cover;
 }
-
-@media (max-width: 1024px) {
-  body {
-    background: none;
-  }
-  body * {
-    display: none;
-  }
-  body::after {
-    content: "Device not supported.";
-    display: grid;
-    text-align: center;
-    min-height: 100vh;
-  }
-}

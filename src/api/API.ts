@@ -77,13 +77,20 @@ export function setUserToken(token) {
   localStorage.setItem("token", token);
 }
 
-export async function checkIfAuthenticated(): Promise<User | undefined> {
+export async function authenticateLocally(): Promise<User | undefined> {
   if (localStorage.hasOwnProperty("token")) {
     const token = localStorage.getItem("token")!;
     client.defaults.headers.common = {
       Authorization: "Bearer " + token
     };
-    return getUser(jwtDecode<{ nameid: string }>(token).nameid);
+    const decodedToken = jwtDecode<{
+      exp: number;
+      iat: number;
+      nameid: string;
+      nbf: number;
+    }>(token);
+    if (decodedToken.exp < new Date().getTime() / 1000) return undefined;
+    else return getUser(decodedToken.nameid);
   } else {
     return undefined;
   }
