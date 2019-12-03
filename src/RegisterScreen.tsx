@@ -45,7 +45,10 @@ function RegisterScreen(props: { onSuccessfulRegister: () => void }) {
               actions.setSubmitting(false);
             }}
             validationSchema={yup.object({
-              username: yup.string().required("Please enter a username"),
+              username: yup
+                .string()
+                .required("Please enter a username")
+                .matches(/^[0-1a-zA-Z-_]+$/, "illegal characters detected"),
               password: yup
                 .string()
                 .required("Please enter a password")
@@ -63,6 +66,7 @@ function RegisterScreen(props: { onSuccessfulRegister: () => void }) {
                 .string()
                 .required("Please enter your E-mail")
                 .email("Please enter a valid E-mail")
+                .matches(/^[0-9a-zA-Z.-_@]+$/, "illegal characters detected")
             })}
           >
             {({ isSubmitting, submitForm }) => (
