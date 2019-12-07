@@ -25,6 +25,7 @@
     "react": "^16.12.0",
     "react-dom": "^16.11.0",
     "react-scripts": "3.2.0",
+    "react-star-rating-component": "^1.4.1",
     "signalr": "^2.4.1",
     "typescript": "^3.7.2",
     "unstated-next": "^1.1.0",

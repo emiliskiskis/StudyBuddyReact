@@ -53,9 +53,10 @@ function RegisterScreen(props: { onSuccessfulRegister: () => void }) {
                 .string()
                 .required("Please enter a password")
                 .matches(
-                  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/,
+                  /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[!-~]{8,}$/,
                   "Password must be atleast of 8 characters, contain atleast one number and one uppercase letter"
                 ),
+              //Password can also contain special characters
               passwordConfirm: yup
                 .string()
                 .required("Please enter a password")
