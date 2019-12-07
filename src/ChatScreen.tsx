@@ -5,6 +5,7 @@ import {
   List,
   Paper,
   TextField,
+  Tooltip,
   Typography
 } from "@material-ui/core";
 import React, { useEffect, useRef, useState } from "react";
@@ -84,10 +85,23 @@ function ChatScreen(props: {
                     spacing={1}
                   >
                     <Grid item>
-                      <Avatar>
-                        {message.user.firstName.substring(0, 1) +
-                          message.user.lastName.substring(0, 1)}
-                      </Avatar>
+                      <Tooltip
+                        title={
+                          message.user.firstName + " " + message.user.lastName
+                        }
+                        PopperProps={{
+                          placement: "top"
+                        }}
+                        TransitionProps={{
+                          enter: true,
+                          exit: true
+                        }}
+                      >
+                        <Avatar>
+                          {message.user.firstName.substring(0, 1) +
+                            message.user.lastName.substring(0, 1)}
+                        </Avatar>
+                      </Tooltip>
                     </Grid>
                     <Grid item>
                       <Paper
@@ -100,7 +114,9 @@ function ChatScreen(props: {
                       >
                         <Typography
                           color={
-                            !message.pending ? "textPrimary" : "textSecondary"
+                            message.tempId == null
+                              ? "textPrimary"
+                              : "textSecondary"
                           }
                         >
                           {message.text}

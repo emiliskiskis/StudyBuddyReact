@@ -7,11 +7,14 @@ import ListItemText from "@material-ui/core/ListItemText";
 import { User } from "./types/user";
 import { getAllUsers } from "./api/API";
 
-function UserList(props: { onUserSelect: (username: string) => any }) {
+function UserList(props: {
+  excludedUsers?: string[];
+  onUserSelect: (username: string) => any;
+}) {
   const [loading, setLoading] = useState<boolean>(true);
   const [users, setUsers] = useState<User[]>([]);
 
-  const { onUserSelect } = props;
+  const { excludedUsers = [], onUserSelect } = props;
 
   useEffect(() => {
     getAllUsers().then(users => {
@@ -24,15 +27,17 @@ function UserList(props: { onUserSelect: (username: string) => any }) {
     <>
       {loading && <LinearProgress />}
       <List dense disablePadding style={{ overflowY: "auto", height: "100%" }}>
-        {users.map(user => (
-          <ListItem
-            key={user.username}
-            button
-            onClick={() => onUserSelect(user.username)}
-          >
-            <ListItemText primary={`${user.firstName} ${user.lastName}`} />
-          </ListItem>
-        ))}
+        {users
+          .filter(user => !excludedUsers.includes(user.username))
+          .map(user => (
+            <ListItem
+              key={user.username}
+              button
+              onClick={() => onUserSelect(user.username)}
+            >
+              <ListItemText primary={`${user.firstName} ${user.lastName}`} />
+            </ListItem>
+          ))}
       </List>
     </>
   );

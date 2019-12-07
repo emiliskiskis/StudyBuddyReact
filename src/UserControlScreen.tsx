@@ -1,12 +1,22 @@
 import {
+  CircularProgress,
   Divider,
   Grid,
   IconButton,
   LinearProgress,
+  Menu,
+  MenuItem,
   Paper,
   Tooltip,
   Typography
 } from "@material-ui/core";
+import {
+  ConnectOther,
+  MessageSuccess,
+  ReceiveChat,
+  ReceiveMessage,
+  SendMessage
+} from "./api/SignalR";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import React, {
   useCallback,
@@ -15,7 +25,19 @@ import React, {
   useRef,
   useState
 } from "react";
-import { getAllUserChats, getChatMessages, getGroupName } from "./api/API";
+import {
+  addProfilePicture,
+  addUserToChat,
+  deleteProfilePicture,
+  getAllUserChats,
+  getChatMessages,
+  getGroupName
+} from "./api/API";
+import {
+  bindMenu,
+  bindTrigger,
+  usePopupState
+} from "material-ui-popup-state/hooks";
 
 import AddIcon from "@material-ui/icons/Add";
 import { Chat } from "./types/chat";
@@ -27,39 +49,34 @@ import { User } from "./types/user";
 import { UserContainer } from "./containers/UserContainer";
 import UserIcon from "@material-ui/icons/AccountCircle";
 import UserList from "./UserList";
-import uuidv4 from "uuid/v4";
 
 enum ListView {
   Chat,
-  User
+  User,
+  AddUserToChat
 }
 
 function UserControlScreen() {
-  const { user, setUser } = useContext<{
+  const { user } = useContext<{
     user: User;
-    setUser: (
-      user:
-        | (User | undefined)
-        | ((prevUser: User | undefined) => User | undefined)
-    ) => void;
   }>(UserContainer);
   const [activeChat, setActiveChat] = useState<string>();
+  const [chatToAddUserTo, setChatToAddUserTo] = useState<Chat>();
   const [chats, setChats] = useState<Chat[]>([]);
   const [connection, setConnection] = useState<HubConnection>();
   const [loading, setLoading] = useState<boolean>(false);
   const [messages, setMessages] = useState<{ [chatId: string]: Message[] }>({});
   const [renderedList, setRenderedList] = useState<ListView>(ListView.Chat);
 
-  const messagesRef = useRef(messages);
-
+  const chatsRef = useRef(chats);
   useEffect(() => {
-    messagesRef.current = messages;
-  }, [messages]);
+    chatsRef.current = chats;
+  }, [chats]);
 
   async function createNewChat(connectTo: string) {
     const newChat = await getGroupName(user.username, connectTo);
 
-    connection!.invoke("ConnectOther", connectTo, newChat.id);
+    if (connection != null) ConnectOther(connection, connectTo, newChat.id);
     setChats(prevChats => prevChats.concat(newChat));
     setMessages(prevMessages => ({
       ...prevMessages,
@@ -68,45 +85,29 @@ function UserControlScreen() {
     return newChat;
   }
 
-  const receiveNewChat = useCallback(
-    async (username: string) => {
-      console.log("invoked");
-      setLoading(true);
-      const newChat = await getGroupName(user.username, username);
-      setChats(prevChats => prevChats.concat(newChat));
-      setLoading(false);
-      return newChat;
-    },
-    [user.username]
-  );
-
   function addMessage(
-    chatId: string,
     username: string,
-    sentUser: User | undefined,
-    messageId: string,
+    chatId: string,
     text: string,
-    sentAt: string,
-    pending = false
+    sentAt: Date,
+    tempId?: number
   ) {
-    const message = {
-      id: messageId,
-      user: {
-        username: username,
-        firstName: sentUser != null ? sentUser.firstName : "",
-        lastName: sentUser != null ? sentUser.lastName : ""
-      },
-      text,
-      sentAt: new Date(sentAt),
-      pending
-    };
-    setMessages(prevMessages => ({
-      ...prevMessages,
-      [chatId]:
-        prevMessages[chatId] != null
-          ? prevMessages[chatId].concat(message)
-          : [message]
-    }));
+    const chat = chats.find(chat => chat.id === chatId);
+    if (chat != null) {
+      const message = {
+        user: chat.users.find(user => user.username === username)!,
+        text,
+        sentAt,
+        tempId
+      };
+      setMessages(prevMessages => ({
+        ...prevMessages,
+        [chatId]:
+          prevMessages[chatId] != null
+            ? prevMessages[chatId].concat(message)
+            : [message]
+      }));
+    }
   }
 
   const getActiveChatMessages = useCallback(async (chatId: string) => {
@@ -132,73 +133,27 @@ function UserControlScreen() {
     setActiveChat(id);
   }
 
-  function handleMessageSend(
+  async function handleMessageSend(
     username: string,
     chatId: string,
-    messageText: string
+    text: string
   ) {
-    const messageId = uuidv4();
-    const messageSendPromise = connection!.invoke(
-      "SendMessage",
+    addMessage(username, chatId, text, new Date(), messages[chatId].length);
+    return SendMessage(
+      connection!,
       username,
       chatId,
-      messageId,
-      messageText
+      text,
+      messages[chatId].length
     );
-    addMessage(
-      chatId,
-      username,
-      user,
-      messageId,
-      messageText,
-      new Date().toISOString(),
-      true
-    );
-    return messageSendPromise;
   }
-
-  const handleReceiveMessage = useCallback(
-    async (
-      username: string,
-      chatId: string,
-      messageId: string,
-      messageText: string,
-      sentAt: string
-    ) => {
-      const messages = messagesRef.current;
-      const chat = chats.find(chat => chat.id === chatId);
-      if (chat != null) {
-        if (username === user.username) {
-          const sentMessageIndex = messages[chatId].findIndex(
-            message => message.pending && message.id === messageId
-          );
-          if (messages[chatId][sentMessageIndex] != null) {
-            setMessages(prevMessages => ({
-              ...prevMessages,
-              [chatId]: [
-                ...prevMessages[chatId].slice(0, sentMessageIndex),
-                { ...prevMessages[chatId][sentMessageIndex], pending: false },
-                ...prevMessages[chatId].slice(sentMessageIndex + 1)
-              ]
-            }));
-            return;
-          }
-        }
-        const sentUser = chat.users.find(user => user.username === username);
-        addMessage(chatId, username, sentUser, messageId, messageText, sentAt);
-      } else {
-        const newChat = await receiveNewChat(username);
-        const sentUser = newChat.users.find(user => user.username === username);
-        addMessage(chatId, username, sentUser, messageId, messageText, sentAt);
-      }
-    },
-    [chats, messagesRef, receiveNewChat, user.username]
-  );
 
   async function handleUserSelect(username: string) {
     setLoading(true);
     const chat = chats.find(
-      chat => chat.users.find(user => user.username === username) != null
+      chat =>
+        chat.users.length === 2 &&
+        chat.users.find(user => user.username === username) != null
     );
     if (chat != null) {
       if (messages[chat.id] == null) {
@@ -207,7 +162,33 @@ function UserControlScreen() {
       setActiveChat(chat.id);
     } else {
       const newChat = await createNewChat(username);
+      await getActiveChatMessages(newChat.id);
       setActiveChat(newChat.id);
+    }
+    setRenderedList(ListView.Chat);
+    setLoading(false);
+  }
+
+  async function handleAddUserToChatChatSelect(chat: Chat) {
+    setChatToAddUserTo(chat);
+    setRenderedList(ListView.AddUserToChat);
+  }
+
+  async function handleAddUserToChatUserSelect(username: string) {
+    if (chatToAddUserTo != null) {
+      const chatId = chatToAddUserTo.id;
+      setLoading(true);
+      const chatIndex = chats.findIndex(chat => chat.id === chatId);
+      const updatedChat = await addUserToChat(chatId, username);
+      if (messages[chatId] == null) {
+        await getActiveChatMessages(chatId);
+      }
+      setChats(prevChats => {
+        prevChats[chatIndex] = updatedChat;
+        return prevChats;
+      });
+
+      setActiveChat(chatId);
     }
     setRenderedList(ListView.Chat);
     setLoading(false);
@@ -215,11 +196,12 @@ function UserControlScreen() {
 
   useEffect(() => {
     const connection = new HubConnectionBuilder()
-      .withUrl("http://buddiesofstudy.tk/chat")
+      .withUrl("http://192.168.1.69:8080/chat")
       .build();
 
-    connection.on("ReceiveMessage", handleReceiveMessage);
-    connection.on("ReceiveChat", receiveNewChat);
+    connection.on("ReceiveMessage", ReceiveMessage(chatsRef, setMessages));
+    connection.on("ReceiveChat", ReceiveChat(setChats, setLoading));
+    connection.on("MessageSuccess", MessageSuccess(setMessages));
 
     connection
       .start()
@@ -234,7 +216,7 @@ function UserControlScreen() {
     return () => {
       connection.stop();
     };
-  }, [receiveNewChat, handleReceiveMessage, user.username]);
+  }, [chatsRef, setChats, setMessages, user.username]);
 
   useEffect(() => {
     setLoading(true);
@@ -256,7 +238,7 @@ function UserControlScreen() {
                 </Typography>
               </Grid>
               <Grid item>{loading ? <LinearProgress /> : <Divider />}</Grid>
-              <Grid item xs>
+              <Grid item xs style={{ overflowY: "auto" }}>
                 {renderedList === ListView.Chat && (
                   <ChatList
                     activeChat={activeChat}
@@ -268,55 +250,38 @@ function UserControlScreen() {
                         [key]: messages[key][messages[key].length - 1]
                       }))
                     )}
-                    user={user}
                     onChatSelect={handleChatSelect}
+                    onAddUserToChatSelect={handleAddUserToChatChatSelect}
                   />
                 )}
                 {renderedList === ListView.User && (
                   <UserList onUserSelect={handleUserSelect} />
+                )}
+                {renderedList === ListView.AddUserToChat && (
+                  <UserList
+                    onUserSelect={handleAddUserToChatUserSelect}
+                    excludedUsers={
+                      chatToAddUserTo != null
+                        ? chatToAddUserTo.users.map(user => user.username)
+                        : []
+                    }
+                  />
                 )}
               </Grid>
               <Grid item>
                 <Divider />
               </Grid>
               <Grid item>
-                <Paper style={{ padding: "4px 8px" }}>
-                  <Grid container>
-                    <Grid item>
-                      <AddUserButton
-                        currentList={renderedList}
-                        onClick={() => {
-                          setRenderedList(prevRenderedList =>
-                            prevRenderedList === ListView.Chat
-                              ? ListView.User
-                              : ListView.Chat
-                          );
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs />
-                    <Grid item>
-                      <Tooltip
-                        title={`Logged in as ${user.firstName} ${user.lastName} (${user.username})`}
-                      >
-                        <UserIcon style={{ padding: 8 }} color="action" />
-                      </Tooltip>
-                    </Grid>
-                    <Grid item>
-                      <Tooltip title="Log out">
-                        <IconButton
-                          onClick={() => {
-                            setUser(undefined);
-                            localStorage.removeItem("token");
-                          }}
-                          style={{ padding: 8 }}
-                        >
-                          <LogoutIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Grid>
-                  </Grid>
-                </Paper>
+                <ControlFooter
+                  renderedList={renderedList}
+                  onAddUserButtonClick={() => {
+                    setRenderedList(prevRenderedList =>
+                      prevRenderedList === ListView.Chat
+                        ? ListView.User
+                        : ListView.Chat
+                    );
+                  }}
+                />
               </Grid>
             </Grid>
           </Paper>
@@ -346,14 +311,121 @@ function AddUserButton(props: { currentList: ListView; onClick: () => any }) {
       <IconButton
         onClick={onClick}
         style={{
-          padding: 8,
-          transform: currentList === ListView.User ? "rotate(45deg)" : "",
+          transform: currentList !== ListView.Chat ? "rotate(45deg)" : "",
           transition: "transform 300ms ease"
         }}
       >
         <AddIcon />
       </IconButton>
     </Tooltip>
+  );
+}
+
+function ControlFooter(props: {
+  renderedList: ListView;
+  onAddUserButtonClick: () => any;
+}) {
+  const popupState = usePopupState({ variant: "popover" });
+  const [removing, setRemoving] = useState<boolean>(false);
+  const [uploading, setUploading] = useState<boolean>(false);
+
+  const { user, setUser } = useContext<{
+    user: User;
+    setUser: (user: (User | undefined) | (() => User | undefined)) => any;
+  }>(UserContainer);
+  const { renderedList, onAddUserButtonClick } = props;
+
+  function handleImageSelected(event: React.FormEvent<HTMLInputElement>) {
+    setUploading(true);
+    const files = event.currentTarget.files;
+    if (files != null && files[0] != null) {
+      const image = files[0];
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const profilePicture = await addProfilePicture(
+          user.username,
+          reader.result as string
+        );
+        popupState.close();
+        setUploading(false);
+        setUser({ ...user, profilePicture: profilePicture.data });
+      };
+      reader.readAsDataURL(image);
+    }
+  }
+
+  async function handleRemovePicture() {
+    setRemoving(true);
+    await deleteProfilePicture(user.username);
+    popupState.close();
+    setUser({ ...user, profilePicture: undefined });
+    setRemoving(false);
+  }
+
+  return (
+    <Paper style={{ padding: "4px 8px" }}>
+      <Grid container>
+        <Grid item>
+          <AddUserButton
+            currentList={renderedList}
+            onClick={onAddUserButtonClick}
+          />
+        </Grid>
+        <Grid item xs />
+        <Grid item>
+          <Tooltip
+            title={`Logged in as ${user.firstName} ${user.lastName} (${user.username})`}
+          >
+            <IconButton {...bindTrigger(popupState)}>
+              <UserIcon />
+            </IconButton>
+          </Tooltip>
+        </Grid>
+        <Grid item>
+          <Tooltip title="Log out">
+            <IconButton
+              onClick={() => {
+                setUser(undefined);
+                localStorage.removeItem("token");
+              }}
+            >
+              <LogoutIcon />
+            </IconButton>
+          </Tooltip>
+        </Grid>
+      </Grid>
+      <Menu
+        disableBackdropClick={uploading}
+        {...bindMenu(popupState)}
+        transformOrigin={{ horizontal: "left", vertical: "bottom" }}
+      >
+        <input
+          id="profile_picture"
+          style={{ display: "none" }}
+          type="file"
+          onInput={handleImageSelected}
+        />
+        <MenuItem
+          disabled={uploading}
+          onClick={() => document.getElementById("profile_picture")!.click()}
+        >
+          {user.profilePicture != null
+            ? "Change profile picture"
+            : "Add profile picture"}
+          {uploading && (
+            <CircularProgress size={24} style={{ marginLeft: 8 }} />
+          )}
+        </MenuItem>
+        {user.profilePicture != null && (
+          <MenuItem disabled={uploading} onClick={handleRemovePicture}>
+            Remove profile picture
+            {removing && (
+              <CircularProgress size={24} style={{ marginLeft: 8 }} />
+            )}
+          </MenuItem>
+        )}
+      </Menu>
+    </Paper>
   );
 }
 

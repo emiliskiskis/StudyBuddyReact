@@ -3,12 +3,12 @@ import "./App.css";
 import { MuiThemeProvider, createMuiTheme } from "@material-ui/core";
 import React, { useContext, useEffect, useState } from "react";
 import { UserContainer, useUser } from "./containers/UserContainer";
+import { authenticateLocally, getProfilePicture } from "./api/API";
 
 import LoginScreen from "./LoginScreen";
 import RegisterScreen from "./RegisterScreen";
 import { SnackbarProvider } from "notistack";
 import UserControlScreen from "./UserControlScreen";
-import { authenticateLocally } from "./api/API";
 
 enum View {
   Login,
@@ -19,6 +19,11 @@ enum View {
 
 const theme = createMuiTheme({
   overrides: {
+    MuiIconButton: {
+      root: {
+        padding: 8
+      }
+    },
     MuiTooltip: {
       tooltip: {
         borderRadius: 4,
@@ -59,14 +64,27 @@ function Main() {
   }
 
   useEffect(() => {
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
     authenticateLocally()
       .then(user => {
         setUser(user);
         if (user != null) {
-          setCurrentComponent(View.UserLanding);
+          getProfilePicture(user.username)
+            .then(profilePicture => {
+              setUser({ ...user, profilePicture: profilePicture.data });
+            })
+            .finally(() => {
+              setCurrentComponent(View.UserLanding);
+              setPendingToken(false);
+            });
+        } else {
+          setPendingToken(false);
         }
       })
-      .finally(() => {
+      .catch(error => {
+        console.log(error);
         setPendingToken(false);
       });
   }, [setPendingToken, setUser]);
