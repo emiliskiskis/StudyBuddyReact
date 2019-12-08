@@ -15,6 +15,7 @@ import ListItemText from "@material-ui/core/ListItemText";
 import { Message } from "./types/message";
 import { User } from "./types/user";
 import { UserContainer } from "./containers/UserContainer";
+import UserProfile from "./UserProfile";
 import UserReview from "./UserReview";
 import { fade } from "@material-ui/core/styles";
 
@@ -49,6 +50,7 @@ function ChatList(props: {
         <img src={user.profilePicture} alt="" style={{ width: "100%" }} />
       )}
       <UserReview />
+      <UserProfile />
     </List>
   );
 }

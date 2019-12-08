@@ -362,6 +362,10 @@ function ControlFooter(props: {
     setRemoving(false);
   }
 
+  async function handleToProfile() {
+    alert("yeet");
+  }
+
   return (
     <Paper style={{ padding: "4px 8px" }}>
       <Grid container>
@@ -405,6 +409,7 @@ function ControlFooter(props: {
           type="file"
           onInput={handleImageSelected}
         />
+        <MenuItem onClick={handleToProfile}>My profile</MenuItem>
         <MenuItem
           disabled={uploading}
           onClick={() => document.getElementById("profile_picture")!.click()}
