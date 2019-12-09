@@ -13,8 +13,6 @@ import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 import { Message } from "./types/message";
 import { UserContainer } from "./containers/UserContainer";
-import UserProfile from "./UserProfile";
-import UserReview from "./UserReview";
 import { fade } from "@material-ui/core/styles";
 
 const useStyles = makeStyles(theme => ({
@@ -43,8 +41,6 @@ function ChatList(props: {
           onChatSelect={onChatSelect}
         />
       ))}
-      <UserReview />
-      <UserProfile />
     </List>
   );
 }

@@ -1,22 +1,17 @@
 import {
-  CircularProgress,
-  Divider,
-  Grid,
-  IconButton,
-  LinearProgress,
-  Menu,
-  MenuItem,
-  Paper,
-  Tooltip,
-  Typography
-} from "@material-ui/core";
-import {
   ConnectOther,
   MessageSuccess,
   ReceiveChat,
   ReceiveMessage,
   SendMessage
 } from "./api/SignalR";
+import {
+  Divider,
+  Grid,
+  LinearProgress,
+  Paper,
+  Typography
+} from "@material-ui/core";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import React, {
   useCallback,
@@ -26,33 +21,24 @@ import React, {
   useState
 } from "react";
 import {
-  addProfilePicture,
   addUserToChat,
-  deleteProfilePicture,
   getAllUserChats,
   getChatMessages,
   getGroupName,
   getProfilePicture
 } from "./api/API";
-import {
-  bindMenu,
-  bindTrigger,
-  usePopupState
-} from "material-ui-popup-state/hooks";
 
-import AddIcon from "@material-ui/icons/Add";
 import { Chat } from "./types/chat";
 import ChatList from "./ChatList";
 import ChatScreen from "./ChatScreen";
-import LogoutIcon from "@material-ui/icons/ExitToApp";
 import { Message } from "./types/message";
 import { ProfilePicture } from "./types/profilePicture";
 import { User } from "./types/user";
 import { UserContainer } from "./containers/UserContainer";
-import UserIcon from "@material-ui/icons/AccountCircle";
+import UserControlFooter from "./UserControlFooter";
 import UserList from "./UserList";
 
-enum ListView {
+export enum ListView {
   Chat,
   User,
   AddUserToChat
@@ -230,7 +216,7 @@ function UserControlScreen() {
 
   useEffect(() => {
     const connection = new HubConnectionBuilder()
-      .withUrl("http://192.168.1.69:8080/chat")
+      .withUrl("http://buddiesofstudy.tk/chat")
       .build();
 
     connection.on("ReceiveMessage", ReceiveMessage(chatsRef, setMessages));
@@ -268,7 +254,7 @@ function UserControlScreen() {
   return (
     <Paper style={{ margin: 40, height: "calc(100vh - 80px)" }}>
       <Grid container style={{ height: "100%" }}>
-        <Grid item xs={3} style={{ maxHeight: "100%" }}>
+        <Grid item xs style={{ maxHeight: "100%", maxWidth: 400 }}>
           <Paper style={{ height: "100%", width: "100%" }}>
             <Grid container direction="column" style={{ height: "100%" }}>
               <Grid item>
@@ -311,7 +297,7 @@ function UserControlScreen() {
                 <Divider />
               </Grid>
               <Grid item>
-                <ControlFooter
+                <UserControlFooter
                   renderedList={renderedList}
                   onAddUserButtonClick={() => {
                     setRenderedList(prevRenderedList =>
@@ -325,7 +311,7 @@ function UserControlScreen() {
             </Grid>
           </Paper>
         </Grid>
-        <Grid item xs={9} style={{ maxHeight: "100%" }}>
+        <Grid item xs style={{ maxHeight: "100%" }}>
           {activeChat != null && user != null ? (
             <ChatScreen
               activeChat={activeChat}
@@ -339,137 +325,6 @@ function UserControlScreen() {
           )}
         </Grid>
       </Grid>
-    </Paper>
-  );
-}
-
-function AddUserButton(props: { currentList: ListView; onClick: () => any }) {
-  const { currentList, onClick } = props;
-
-  return (
-    <Tooltip title="Add user">
-      <IconButton
-        onClick={onClick}
-        style={{
-          transform: currentList !== ListView.Chat ? "rotate(45deg)" : "",
-          transition: "transform 300ms ease"
-        }}
-      >
-        <AddIcon />
-      </IconButton>
-    </Tooltip>
-  );
-}
-
-function ControlFooter(props: {
-  renderedList: ListView;
-  onAddUserButtonClick: () => any;
-}) {
-  const popupState = usePopupState({ variant: "popover" });
-  const [removing, setRemoving] = useState<boolean>(false);
-  const [uploading, setUploading] = useState<boolean>(false);
-
-  const { user, setUser } = useContext<{
-    user: User;
-    setUser: (user: (User | undefined) | (() => User | undefined)) => any;
-  }>(UserContainer);
-  const { renderedList, onAddUserButtonClick } = props;
-
-  function handleImageSelected(event: React.FormEvent<HTMLInputElement>) {
-    setUploading(true);
-    const files = event.currentTarget.files;
-    if (files != null && files[0] != null) {
-      const image = files[0];
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const profilePicture = await addProfilePicture(
-          user.username,
-          reader.result as string
-        );
-        popupState.close();
-        setUploading(false);
-        setUser({ ...user, profilePicture });
-      };
-      reader.readAsDataURL(image);
-    }
-  }
-
-  async function handleRemovePicture() {
-    setRemoving(true);
-    await deleteProfilePicture(user.username);
-    popupState.close();
-    setUser({ ...user, profilePicture: undefined });
-    setRemoving(false);
-  }
-
-  async function handleToProfile() {
-    alert("yeet");
-  }
-
-  return (
-    <Paper style={{ padding: "4px 8px" }}>
-      <Grid container>
-        <Grid item>
-          <AddUserButton
-            currentList={renderedList}
-            onClick={onAddUserButtonClick}
-          />
-        </Grid>
-        <Grid item xs />
-        <Grid item>
-          <Tooltip
-            title={`Logged in as ${user.firstName} ${user.lastName} (${user.username})`}
-          >
-            <IconButton {...bindTrigger(popupState)}>
-              <UserIcon />
-            </IconButton>
-          </Tooltip>
-        </Grid>
-        <Grid item>
-          <Tooltip title="Log out">
-            <IconButton
-              onClick={() => {
-                setUser(undefined);
-                localStorage.removeItem("token");
-              }}
-            >
-              <LogoutIcon />
-            </IconButton>
-          </Tooltip>
-        </Grid>
-      </Grid>
-      <Menu
-        disableBackdropClick={uploading}
-        {...bindMenu(popupState)}
-        transformOrigin={{ horizontal: "left", vertical: "bottom" }}
-      >
-        <input
-          id="profile_picture"
-          style={{ display: "none" }}
-          type="file"
-          onInput={handleImageSelected}
-        />
-        <MenuItem onClick={handleToProfile}>My profile</MenuItem>
-        <MenuItem
-          disabled={uploading}
-          onClick={() => document.getElementById("profile_picture")!.click()}
-        >
-          {user.profilePicture != null
-            ? "Change profile picture"
-            : "Add profile picture"}
-          {uploading && (
-            <CircularProgress size={24} style={{ marginLeft: 8 }} />
-          )}
-        </MenuItem>
-        {user.profilePicture != null && (
-          <MenuItem disabled={uploading} onClick={handleRemovePicture}>
-            Remove profile picture
-            {removing && (
-              <CircularProgress size={24} style={{ marginLeft: 8 }} />
-            )}
-          </MenuItem>
-        )}
-      </Menu>
     </Paper>
   );
 }
