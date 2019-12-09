@@ -5,6 +5,8 @@ import * as yup from "yup";
 import { Avatar, Button, Grid, IconButton } from "@material-ui/core";
 import { Field, Form, Formik } from "formik";
 import React, { useContext } from "react";
+import { doLogin, updateUser } from "./api/API";
+import { genSaltSync, hashSync } from "bcryptjs";
 
 import CloseIcon from "@material-ui/icons/Close";
 import { TextField } from "formik-material-ui";
@@ -12,7 +14,34 @@ import { UserContainer } from "./containers/UserContainer";
 
 function UserProfile(props: { onClose: () => void }) {
   const { user } = useContext(UserContainer);
-  function onUpdateClick(values) {}
+
+  async function onUpdateClick(values, actions) {
+    const body = [
+      { op: "replace", path: "/firstName", value: values.firstName },
+      { op: "replace", path: "/lastName", value: values.lastName },
+      { op: "replace", path: "/email", value: values.email }
+    ];
+
+    if (values.oldPassword.trim() !== "") {
+      try {
+        await doLogin(user.username, values.oldPassword);
+
+        const salt = genSaltSync();
+        body.push(
+          {
+            op: "replace",
+            path: "/password",
+            value: hashSync(values.newPassword, salt)
+          },
+          { op: "replace", path: "/salt", value: salt }
+        );
+      } catch (e) {
+        actions.setErrors({ oldPassword: "Password is incorrect" });
+      }
+    }
+
+    updateUser(user.username, body);
+  }
 
   return (
     <div style={{ padding: 16, width: "calc(100% - 32px)" }}>
@@ -53,14 +82,8 @@ function UserProfile(props: { onClose: () => void }) {
               newPassword: "",
               newPasswordConfirm: ""
             }}
-            onSubmit={(values, actions) => onUpdateClick(values)}
+            onSubmit={(values, actions) => onUpdateClick(values, actions)}
             validationSchema={yup.object({
-              oldPassword: yup
-                .string()
-                .matches(
-                  /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[!-~]{8,}$/,
-                  "Password must be atleast of 8 characters, contain atleast one number and one uppercase letter"
-                ),
               newPassword: yup
                 .string()
                 .matches(
@@ -69,7 +92,7 @@ function UserProfile(props: { onClose: () => void }) {
                 ),
               newPasswordConfirm: yup
                 .string()
-                .oneOf([yup.ref("password")], "Passwords do not match!"),
+                .oneOf([yup.ref("newPassword")], "Passwords do not match!"),
               firstName: yup.string().required("Please enter your name"),
               lastName: yup.string().required("Please  enter your last name"),
               email: yup

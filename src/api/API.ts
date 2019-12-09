@@ -57,6 +57,10 @@ export async function doRegister(
   return response.data;
 }
 
+export async function updateUser(username: string, body: any) {
+  return (await client.patch<User>(`users/${username}`, body)).data;
+}
+
 export async function getUser(username: string) {
   return (await client.get<User>(`users/${username}`)).data;
 }

@@ -29,7 +29,7 @@ export function SendMessage(
 
 // Client events
 
-type StateSetter<T> = (t: T | ((prevT: T) => T)) => any;
+export type StateSetter<T> = (t: T | ((prevT: T) => T)) => any;
 type MessageState = { [chatId: string]: Message[] };
 
 export const ReceiveChat = (
