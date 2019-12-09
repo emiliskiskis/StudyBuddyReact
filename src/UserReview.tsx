@@ -18,7 +18,11 @@ function UserReview() {
             />
           </Grid>
           <Grid item>
-            <TextField variant="outlined" multiline value={""} />
+            <TextField
+              variant="outlined"
+              multiline
+              placeholder="Additional comments (optional)"
+            />
           </Grid>
           <Grid item>
             <Button
