@@ -12,7 +12,6 @@ import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 import { Message } from "./types/message";
-import { User } from "./types/user";
 import { UserContainer } from "./containers/UserContainer";
 import UserProfile from "./UserProfile";
 import UserReview from "./UserReview";

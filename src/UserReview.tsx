@@ -1,10 +1,18 @@
 import { Button, Grid, Paper, TextField } from "@material-ui/core";
+import React, { useState } from "react";
 
-import React from "react";
 import StarRatingComponent from "react-star-rating-component";
 
 function UserReview() {
-  function onButtonClick() {}
+  const [text, setText] = useState<String>("");
+  const [stars, setStars] = useState(0);
+
+  function onTextFieldChange(fieldValue: String) {
+    setText(fieldValue);
+  }
+  function onButtonClick() {
+    if (stars > 0) alert(text + " " + stars); //if review is valid send POST request here
+  }
 
   return (
     <div style={{ margin: 8 }}>
@@ -14,7 +22,9 @@ function UserReview() {
             <StarRatingComponent
               name="Rating"
               starCount={5}
-              onStarClick={value => {}}
+              onStarClick={value => {
+                setStars(value);
+              }}
             />
           </Grid>
           <Grid item>
@@ -22,6 +32,7 @@ function UserReview() {
               variant="outlined"
               multiline
               placeholder="Additional comments (optional)"
+              onChange={field => onTextFieldChange(field.target.value)}
             />
           </Grid>
           <Grid item>

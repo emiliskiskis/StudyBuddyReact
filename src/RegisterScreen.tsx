@@ -60,7 +60,7 @@ function RegisterScreen(props: { onSuccessfulRegister: () => void }) {
               passwordConfirm: yup
                 .string()
                 .required("Please enter a password")
-                .oneOf([yup.ref("password")], "Password do not match!"),
+                .oneOf([yup.ref("password")], "Passwords do not match!"),
               firstName: yup.string().required("Please enter your name"),
               lastName: yup.string().required("Please  enter your last name"),
               email: yup
