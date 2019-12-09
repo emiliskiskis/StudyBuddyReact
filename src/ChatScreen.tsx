@@ -11,6 +11,7 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 
 import { Message } from "./types/message";
+import { ProfilePicture } from "./types/profilePicture";
 import SendIcon from "@material-ui/icons/Send";
 import { User } from "./types/user";
 import { makeStyles } from "@material-ui/styles";
@@ -18,6 +19,7 @@ import { makeStyles } from "@material-ui/styles";
 function ChatScreen(props: {
   activeChat: string;
   messages: Message[];
+  profilePictures: { [username: string]: ProfilePicture };
   user: User;
   onMessageSend: (
     username: string,
@@ -29,7 +31,7 @@ function ChatScreen(props: {
 
   const [message, setMessage] = useState<string>();
 
-  const { activeChat, messages, user, onMessageSend } = props;
+  const { activeChat, messages, profilePictures, user, onMessageSend } = props;
 
   const messageListRef = useRef<HTMLUListElement>(null);
 
@@ -97,9 +99,16 @@ function ChatScreen(props: {
                           exit: true
                         }}
                       >
-                        <Avatar>
-                          {message.user.firstName.substring(0, 1) +
-                            message.user.lastName.substring(0, 1)}
+                        <Avatar
+                          src={
+                            profilePictures[message.user.username] != null
+                              ? profilePictures[message.user.username].data
+                              : undefined
+                          }
+                        >
+                          {profilePictures[message.user.username] == null &&
+                            message.user.firstName.substring(0, 1) +
+                              message.user.lastName.substring(0, 1)}
                         </Avatar>
                       </Tooltip>
                     </Grid>

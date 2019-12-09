@@ -31,7 +31,8 @@ import {
   deleteProfilePicture,
   getAllUserChats,
   getChatMessages,
-  getGroupName
+  getGroupName,
+  getProfilePicture
 } from "./api/API";
 import {
   bindMenu,
@@ -45,6 +46,7 @@ import ChatList from "./ChatList";
 import ChatScreen from "./ChatScreen";
 import LogoutIcon from "@material-ui/icons/ExitToApp";
 import { Message } from "./types/message";
+import { ProfilePicture } from "./types/profilePicture";
 import { User } from "./types/user";
 import { UserContainer } from "./containers/UserContainer";
 import UserIcon from "@material-ui/icons/AccountCircle";
@@ -66,6 +68,9 @@ function UserControlScreen() {
   const [connection, setConnection] = useState<HubConnection>();
   const [loading, setLoading] = useState<boolean>(false);
   const [messages, setMessages] = useState<{ [chatId: string]: Message[] }>({});
+  const [profilePictures, setProfilePictures] = useState<{
+    [username: string]: ProfilePicture;
+  }>({});
   const [renderedList, setRenderedList] = useState<ListView>(ListView.Chat);
 
   const chatsRef = useRef(chats);
@@ -73,8 +78,37 @@ function UserControlScreen() {
     chatsRef.current = chats;
   }, [chats]);
 
+  const profilePicturesRef = useRef(profilePictures);
+  useEffect(() => {
+    profilePicturesRef.current = profilePictures;
+  }, [profilePictures]);
+
+  const getUserProfilePictures = useCallback(
+    (users: User[]) => {
+      users
+        .map(user => user.username)
+        .filter(
+          (username, index) =>
+            username !== user.username &&
+            users.findIndex(user => user.username === username) === index
+        )
+        .forEach(username => {
+          if (profilePicturesRef.current[username] == null) {
+            getProfilePicture(username).then(profilePicture => {
+              setProfilePictures(prevProfilePictures => ({
+                ...prevProfilePictures,
+                [username]: profilePicture
+              }));
+            });
+          }
+        });
+    },
+    [profilePicturesRef, user.username]
+  );
+
   async function createNewChat(connectTo: string) {
     const newChat = await getGroupName(user.username, connectTo);
+    getUserProfilePictures(newChat.users);
 
     if (connection != null) ConnectOther(connection, connectTo, newChat.id);
     setChats(prevChats => prevChats.concat(newChat));
@@ -219,12 +253,17 @@ function UserControlScreen() {
   }, [chatsRef, setChats, setMessages, user.username]);
 
   useEffect(() => {
+    setChats([]);
     setLoading(true);
+    if (user.profilePicture != null) {
+      setProfilePictures({ [user.username]: user.profilePicture });
+    }
     getAllUserChats(user.username).then(chats => {
+      chats.forEach(chat => getUserProfilePictures(chat.users));
       setChats(chats);
       setLoading(false);
     });
-  }, [user.username]);
+  }, [getUserProfilePictures, user.profilePicture, user.username]);
 
   return (
     <Paper style={{ margin: 40, height: "calc(100vh - 80px)" }}>
@@ -291,6 +330,7 @@ function UserControlScreen() {
             <ChatScreen
               activeChat={activeChat}
               messages={messages[activeChat]}
+              profilePictures={profilePictures}
               user={user}
               onMessageSend={handleMessageSend}
             />
@@ -348,7 +388,7 @@ function ControlFooter(props: {
         );
         popupState.close();
         setUploading(false);
-        setUser({ ...user, profilePicture: profilePicture.data });
+        setUser({ ...user, profilePicture });
       };
       reader.readAsDataURL(image);
     }
