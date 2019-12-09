@@ -1,5 +1,4 @@
 import {
-  Button,
   IconButton,
   ListItemSecondaryAction,
   Tooltip,
@@ -32,7 +31,6 @@ function ChatList(props: {
   onAddUserToChatSelect: (chat: Chat) => any;
   onChatSelect: (chatId: string) => any;
 }) {
-  const { user } = useContext(UserContainer);
   const { activeChat, chats, onAddUserToChatSelect, onChatSelect } = props;
 
   return (
@@ -46,9 +44,6 @@ function ChatList(props: {
           onChatSelect={onChatSelect}
         />
       ))}
-      {user.profilePicture != null && (
-        <img src={user.profilePicture} alt="" style={{ width: "100%" }} />
-      )}
       <UserReview />
       <UserProfile />
     </List>
