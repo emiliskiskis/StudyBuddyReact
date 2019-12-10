@@ -1,6 +1,7 @@
 import bcrypt, { genSalt, hash } from "bcryptjs";
 
 import { Chat } from "../types/chat";
+import { Feedback } from "../types/feedback";
 import { Message } from "../types/message";
 import { User } from "../types/user";
 import axios from "axios";
@@ -137,4 +138,8 @@ export async function getProfilePicture(username: string) {
 
 export async function deleteProfilePicture(username: string) {
   return client.delete(`users/${username}/picture`);
+}
+
+export async function getUserFeedback(username: string) {
+  return (await client.get<Feedback[]>(`feedback/${username}`)).data;
 }

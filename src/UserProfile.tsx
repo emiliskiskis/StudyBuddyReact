@@ -1,19 +1,27 @@
-import {} from "formik-material-ui";
-
 import * as yup from "yup";
 
 import { Avatar, Button, Grid, IconButton } from "@material-ui/core";
 import { Field, Form, Formik } from "formik";
-import React, { useContext } from "react";
-import { doLogin, updateUser } from "./api/API";
+import React, { useEffect, useState } from "react";
+import { doLogin, getUserFeedback, updateUser } from "./api/API";
 import { genSaltSync, hashSync } from "bcryptjs";
 
 import CloseIcon from "@material-ui/icons/Close";
+import { Feedback } from "./types/feedback";
+import StarRatingComponent from "react-star-rating-component";
 import { TextField } from "formik-material-ui";
-import { UserContainer } from "./containers/UserContainer";
+import { User } from "./types/user";
 
-function UserProfile(props: { onClose: () => void }) {
-  const { user } = useContext(UserContainer);
+function UserProfile(props: { user: User; onClose: () => void }) {
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const { user } = props;
+
+  useEffect(() => {
+    console.log(user.profilePicture!.data);
+    getUserFeedback(user.username).then(feedback => {
+      setFeedback(feedback);
+    });
+  }, [user.username]);
 
   async function onUpdateClick(values, actions) {
     const body = [
@@ -65,12 +73,30 @@ function UserProfile(props: { onClose: () => void }) {
           {user.profilePicture != null && (
             <Grid item>
               <Avatar
-                src={user.profilePicture}
+                src={
+                  user.profilePicture != null ? user.profilePicture.data : ""
+                }
                 alt=""
                 style={{ height: 128, width: 128 }}
               />
             </Grid>
           )}
+        </Grid>
+        <Grid container item justify="center">
+          <Grid item style={{ fontSize: "2em" }}>
+            <StarRatingComponent
+              name="Rating"
+              starCount={5}
+              editing={false}
+              value={
+                feedback.length > 0
+                  ? feedback
+                      .map(f => f.rating)
+                      .reduce((prev, curr) => prev + curr) / feedback.length
+                  : 0
+              }
+            />
+          </Grid>
         </Grid>
         <Grid item>
           <Formik

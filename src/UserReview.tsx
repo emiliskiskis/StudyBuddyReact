@@ -11,7 +11,8 @@ function UserReview() {
     setText(fieldValue);
   }
   function onButtonClick() {
-    if (stars > 0) alert(text + " " + stars); //if review is valid send POST request here
+    if (stars > 0) alert(text + " " + stars);
+    //author username string, reviewee username string, comment string, rating int
   }
 
   return (

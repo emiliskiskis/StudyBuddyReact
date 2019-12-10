@@ -28,7 +28,7 @@ import withUserProfile from "./withUserProfile";
 function UserControlFooter(props: {
   renderedList: ListView;
   onAddUserButtonClick: () => any;
-  onUserProfileOpen?: (event: Event) => void;
+  onUserProfileOpen?: (event: Event, user: User) => void;
 }) {
   const popupState = usePopupState({ variant: "popover" });
   const [removing, setRemoving] = useState<boolean>(false);
@@ -69,7 +69,7 @@ function UserControlFooter(props: {
 
   async function handleOpenProfile(event) {
     popupState.close();
-    if (props.onUserProfileOpen != null) props.onUserProfileOpen(event);
+    if (props.onUserProfileOpen != null) props.onUserProfileOpen(event, user);
   }
 
   return (

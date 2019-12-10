@@ -73,7 +73,7 @@ function Main() {
         if (user != null) {
           getProfilePicture(user.username)
             .then(profilePicture => {
-              setUser({ ...user, profilePicture: profilePicture.data });
+              setUser({ ...user, profilePicture: profilePicture });
             })
             .finally(() => {
               setCurrentComponent(View.UserLanding);
