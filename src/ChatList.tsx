@@ -51,7 +51,7 @@ function ChatListItem(props: {
   onAddUserToChatSelect: (chat: Chat) => any;
   onChatSelect: (chatId: string) => any;
 }) {
-  const classes = useStyles();
+  const classes = useStyles(props);
   const [hover, setHover] = useState<boolean>(false);
   const { user: currentUser } = useContext(UserContainer);
 

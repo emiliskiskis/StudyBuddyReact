@@ -16,6 +16,12 @@ import SendIcon from "@material-ui/icons/Send";
 import { User } from "./types/user";
 import { makeStyles } from "@material-ui/styles";
 
+const useStyles = makeStyles({
+  message: {
+    backgroundColor: "#D0EFFE"
+  }
+});
+
 function ChatScreen(props: {
   activeChat: string;
   messages: Message[];
@@ -27,7 +33,7 @@ function ChatScreen(props: {
     message: string
   ) => Promise<any>;
 }) {
-  const classes = useStyles();
+  const classes = useStyles(props);
 
   const [message, setMessage] = useState<string>();
 
@@ -175,11 +181,5 @@ function ChatScreen(props: {
     </Paper>
   );
 }
-
-const useStyles = makeStyles(theme => ({
-  message: {
-    backgroundColor: "#D0EFFE"
-  }
-}));
 
 export default ChatScreen;

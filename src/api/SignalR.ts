@@ -2,6 +2,8 @@ import { Chat } from "../types/chat";
 import { HubConnection } from "@microsoft/signalr";
 import { Message } from "../types/message";
 import { getChat } from "./API";
+import { pushUserMessage } from "./Notifications";
+//import { pushUserMessage } from "./Notifications";
 
 // Server invocations
 
@@ -55,6 +57,8 @@ export const ReceiveMessage = (
     chat = await getChat(chatId);
   }
   const user = chat.users.find(user => user.username === username)!;
+
+  pushUserMessage(username, text);
 
   setMessages(prevMessages => {
     if (prevMessages[chatId] == null) {
