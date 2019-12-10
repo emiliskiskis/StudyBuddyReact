@@ -1,9 +1,9 @@
-import App from "./App";
 import React from "react";
 import ReactDOM from "react-dom";
+import UserReview from "./UserReview";
 
-it("renders without crashing", () => {
+it("test", () => {
   const div = document.createElement("div");
-  ReactDOM.render(<App />, div);
+  ReactDOM.render(<UserReview />, div);
   ReactDOM.unmountComponentAtNode(div);
 });

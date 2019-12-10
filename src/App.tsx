@@ -9,6 +9,7 @@ import LoginScreen from "./LoginScreen";
 import RegisterScreen from "./RegisterScreen";
 import { SnackbarProvider } from "notistack";
 import UserControlScreen from "./UserControlScreen";
+import { askUserPermission } from "./api/Notifications";
 
 enum View {
   Login,
@@ -50,7 +51,6 @@ function Main() {
   const [pendingToken, setPendingToken] = useState<boolean>(true);
 
   const { user, setUser } = useContext(UserContainer);
-
   function handleSuccessfulLogin() {
     setCurrentComponent(View.UserLanding);
   }
@@ -64,9 +64,11 @@ function Main() {
   }
 
   useEffect(() => {
-    if (Notification.permission === "default") {
-      Notification.requestPermission();
+    async function awaitPermission() {
+      await askUserPermission();
     }
+
+    awaitPermission();
     authenticateLocally()
       .then(user => {
         setUser(user);
